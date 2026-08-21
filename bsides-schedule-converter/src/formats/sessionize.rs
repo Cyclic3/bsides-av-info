@@ -1,9 +1,19 @@
 use chrono::NaiveTime;
-use color_eyre::{Result, eyre::OptionExt};
+use color_eyre::{
+    Result,
+    eyre::{OptionExt, eyre},
+};
 use indexmap::IndexMap;
 use scraper::{ElementRef, Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use std::sync::OnceLock;
+
+static CARD_SELECTOR: OnceLock<Selector> = OnceLock::new();
+static ROOM_SELECTOR: OnceLock<Selector> = OnceLock::new();
+static TIME_SELECTOR: OnceLock<Selector> = OnceLock::new();
+static TITLE_SELECTOR: OnceLock<Selector> = OnceLock::new();
+static SPEAKER_SELECTOR: OnceLock<Selector> = OnceLock::new();
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Sessionize {
@@ -44,18 +54,15 @@ impl FromStr for Sessionize {
         let fragment = Html::parse_fragment(input);
 
         #[expect(clippy::unwrap_used)]
-        let card_selector = Selector::parse(r#"li.sz-session"#).unwrap();
+        let card_selector = CARD_SELECTOR
+            .get_or_init(|| Selector::parse(r#"li.sz-session"#).unwrap());
 
         let mut sessions = Vec::new();
 
-        for card in fragment.select(&card_selector) {
+        for card in fragment.select(card_selector) {
             match parse_card(&card) {
-                Ok(session) => {
-                    sessions.push(session);
-                }
-                Err(err) => {
-                    println!("Warn: {err}");
-                }
+                Ok(session) => sessions.push(session),
+                Err(err) => println!("Warn: {err}"),
             }
         }
 
@@ -65,44 +72,23 @@ impl FromStr for Sessionize {
 
 fn parse_card(card: &ElementRef<'_>) -> Result<Session> {
     #[expect(clippy::unwrap_used)]
-    let room_selector = Selector::parse(r#"div.sz-session__room"#).unwrap();
+    let room_selector = ROOM_SELECTOR
+        .get_or_init(|| Selector::parse(r#"div.sz-session__room"#).unwrap());
     #[expect(clippy::unwrap_used)]
-    let time_selector = Selector::parse(r#"div.sz-session__time"#).unwrap();
+    let time_selector = TIME_SELECTOR
+        .get_or_init(|| Selector::parse(r#"div.sz-session__time"#).unwrap());
     #[expect(clippy::unwrap_used)]
-    let title_selector = Selector::parse(r#"h3.sz-session__title"#).unwrap();
+    let title_selector = TITLE_SELECTOR
+        .get_or_init(|| Selector::parse(r#"h3.sz-session__title"#).unwrap());
     #[expect(clippy::unwrap_used)]
-    let speaker_selector =
-        Selector::parse(r#"ul.sz-session__speakers"#).unwrap();
+    let speaker_selector = SPEAKER_SELECTOR
+        .get_or_init(|| Selector::parse(r#"ul.sz-session__speakers"#).unwrap());
 
-    let room = card
-        .select(&room_selector)
-        .next()
-        .ok_or_eyre("Card missing room definition")?
-        .text()
-        .next()
-        .ok_or_eyre("Room definition missing text")?
-        .trim()
-        .to_string();
-    let time = card
-        .select(&time_selector)
-        .next()
-        .ok_or_eyre("Card missing time definition")?
-        .text()
-        .next()
-        .ok_or_eyre("Time definition missing text")?
-        .trim()
-        .to_string();
-    let title = card
-        .select(&title_selector)
-        .next()
-        .ok_or_eyre("Card missing title definition")?
-        .text()
-        .next()
-        .ok_or_eyre("Title definition missing text")?
-        .trim()
-        .to_string();
+    let room = select_str(card, room_selector, "room")?;
+    let time = select_str(card, time_selector, "time")?;
+    let title = select_str(card, title_selector, "title")?;
     let speakers = card
-        .select(&speaker_selector)
+        .select(speaker_selector)
         .flat_map(|ele| ele.text())
         .filter(|s| s.len() > 1)
         .map(|s| s.trim().to_string())
@@ -121,6 +107,22 @@ fn parse_card(card: &ElementRef<'_>) -> Result<Session> {
         start,
         end,
     })
+}
+
+fn select_str(
+    card: &ElementRef<'_>,
+    selector: &Selector,
+    name: &str,
+) -> Result<String> {
+    Ok(card
+        .select(selector)
+        .next()
+        .ok_or_else(|| eyre!("Card missing {name} definition"))?
+        .text()
+        .next()
+        .ok_or_else(|| eyre!("{name} definition missing text"))?
+        .trim()
+        .to_string())
 }
 
 #[cfg(test)]
