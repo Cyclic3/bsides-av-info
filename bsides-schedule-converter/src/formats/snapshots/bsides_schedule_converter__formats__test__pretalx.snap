@@ -1,0 +1,263 @@
+---
+source: src/formats/mod.rs
+expression: format
+---
+Pretalx:
+  schedule:
+    conference:
+      title: BSides Bristol 2026
+      tracks:
+        - name: Track 1
+        - name: Track 2
+        - name: Rookie Track
+        - name: Workshop
+        - name: Village
+      days:
+        - index: 1
+          rooms:
+            Track 1:
+              - title: Opening Notes Friday
+                start: "08:55:00"
+                duration: "00:10"
+                persons: []
+              - title: Keynote - Managing The Minefield of Management Cyber Explosions - Understanding what to say and when to say it
+                start: "09:05:00"
+                duration: "00:40"
+                persons:
+                  - name: Peter Jones
+                    public_name: Peter Jones
+              - title: "Fake It Till You Detect It: Live Deepfakes, Detection Gaps, and the Human Risk Management Response"
+                start: "10:00:00"
+                duration: "00:40"
+                persons:
+                  - name: "James R. McQuiggan, CISSP"
+                    public_name: "James R. McQuiggan, CISSP"
+              - title: "The Next Internal Network: Why Your Old Playbook Doesn't Work"
+                start: "11:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Dumi Masimini
+                    public_name: Dumi Masimini
+              - title: Domain Protection - How We Protect Our Customers
+                start: "14:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Martin Clarke
+                    public_name: Martin Clarke
+              - title: The biggest digital sovereignty risk isn’t what you think...
+                start: "15:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Matt Johnson
+                    public_name: Matt Johnson
+              - title: Getting started in embedded device research
+                start: "16:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Andy Monaghan
+                    public_name: Andy Monaghan
+              - title: "How Efficiency Can Lead to Disruption: The Evolution of Phishing Emails"
+                start: "17:00:00"
+                duration: "00:20"
+                persons:
+                  - name: Becky Stacey
+                    public_name: Becky Stacey
+            Track 2:
+              - title: Who Can Become Root? An SRE Guide to Access Drift and Privilege Escalation
+                start: "10:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Viola Lykova
+                    public_name: Viola Lykova
+              - title: "Threat Modelling in the Real World: Lessons from a First-Time Practitioner"
+                start: "11:00:00"
+                duration: "00:20"
+                persons:
+                  - name: Poulomi Dwibedi
+                    public_name: Poulomi Dwibedi
+              - title: They Hacked Me. I Took Their Source Code.
+                start: "11:30:00"
+                duration: "00:20"
+                persons:
+                  - name: David Rushmer
+                    public_name: David Rushmer
+              - title: "Why Cybersecurity Awareness Alone Doesn't Stop Phishing: Lessons from a Human-Centred Study of 200 Users"
+                start: "14:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Darlington Chigozie Okeke
+                    public_name: Darlington Chigozie Okeke
+              - title: "The Illusion of the cloud: From orbit to ocean floor"
+                start: "15:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Hannah-Rose Shearman
+                    public_name: Hannah-Rose Shearman
+              - title: "NonStop Looting: How to Steal from the Mainframe You’ve (likely) Never Heard Of"
+                start: "16:00:00"
+                duration: "00:40"
+                persons:
+                  - name: JBoorman
+                    public_name: JBoorman
+              - title: "The Human Firewall Is a Myth: Designing Security for Actual Human Behavior"
+                start: "17:00:00"
+                duration: "00:20"
+                persons:
+                  - name: Endurance Imasuen
+                    public_name: Endurance Imasuen
+            Workshops:
+              - title: Decision Making Under Pressure
+                start: "10:00:00"
+                duration: "02:30"
+                persons:
+                  - name: Jemma Davis & Lucy Smith
+                    public_name: Jemma Davis & Lucy Smith
+              - title: "Using local models and agents, and customising them for your needs"
+                start: "13:30:00"
+                duration: "02:30"
+                persons:
+                  - name: Richard Finlay Tweed
+                    public_name: Richard Finlay Tweed
+            Village 1:
+              - title: ICS Village
+                start: "10:00:00"
+                duration: "08:00"
+                persons:
+                  - name: Joe Gardiner
+                    public_name: Joe Gardiner
+        - index: 2
+          rooms:
+            Track 1:
+              - title: Opening Notes Saturday
+                start: "08:55:00"
+                duration: "00:10"
+                persons: []
+              - title: "Keynote - Agent Smith Is in Your Stack: A Practical Guide to Governing AI Integration Before It Governs You"
+                start: "09:05:00"
+                duration: "00:40"
+                persons:
+                  - name: Susanne Bitter
+                    public_name: Susanne Bitter
+              - title: "The Silence of the LAMs: Detecting Rogue Language Models"
+                start: "10:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Tasha Armstrong-Godwin
+                    public_name: Tasha Armstrong-Godwin
+              - title: "You’ve Been Ph0wned: How Attackers Compromise Organisations Via Telephone Social Engineering"
+                start: "11:00:00"
+                duration: "00:40"
+                persons:
+                  - name: Luiz Simpson
+                    public_name: Luiz Simpson
+              - title: "Ghost in the Kernel: Hunting BYOVD After Microsoft’s 2026 Driver Trust Shift"
+                start: "13:30:00"
+                duration: "00:40"
+                persons:
+                  - name: Richard Dosumu
+                    public_name: Richard Dosumu
+              - title: "Breaching The Perimeter: The Forgotten Attack Vector That Always Works"
+                start: "14:30:00"
+                duration: "00:40"
+                persons:
+                  - name: tatramaco
+                    public_name: tatramaco
+              - title: "So You Want To Get Into Red Teaming: Skills, Mindset, and Myths"
+                start: "15:30:00"
+                duration: "00:40"
+                persons:
+                  - name: Chris Pritchard
+                    public_name: Chris Pritchard
+              - title: Metrics that lie
+                start: "16:30:00"
+                duration: "00:20"
+                persons:
+                  - name: Luigi Ritacca
+                    public_name: Luigi Ritacca
+            Rookie Track:
+              - title: How Resilient is your MFA?
+                start: "10:00:00"
+                duration: "00:20"
+                persons:
+                  - name: Shammas H (@CyberShams)
+                    public_name: Shammas H (@CyberShams)
+              - title: "Beyond the Air Gap: How IT/OT Convergence Changes the Attack Surface"
+                start: "10:30:00"
+                duration: "00:20"
+                persons:
+                  - name: Akash
+                    public_name: Akash
+              - title: "Hooked: Investigating the Phishing Attack That Targeted Me at University"
+                start: "11:00:00"
+                duration: "00:20"
+                persons:
+                  - name: Prithika Gopinath
+                    public_name: Prithika Gopinath
+              - title: "How Not to Roll Out a Security Tool: A Tale of Broken PRs and Regret"
+                start: "11:30:00"
+                duration: "00:20"
+                persons:
+                  - name: James
+                    public_name: James
+              - title: Honeypot detection through machine wear and tear
+                start: "13:30:00"
+                duration: "00:20"
+                persons:
+                  - name: Matilda Moore
+                    public_name: Matilda Moore
+              - title: ADS-B and Aviation Security
+                start: "14:00:00"
+                duration: "00:20"
+                persons:
+                  - name: Oliver Bouchier
+                    public_name: Oliver Bouchier
+              - title: "We Didn't Have a Patch: How Defence in Depth Saved Our Customers from Log4Shell"
+                start: "14:30:00"
+                duration: "00:20"
+                persons:
+                  - name: Simon wilks
+                    public_name: Simon wilks
+              - title: Love You! Now Please Buy Me Gift Cards
+                start: "15:00:00"
+                duration: "00:20"
+                persons:
+                  - name: Aurelia Brzezowska
+                    public_name: Aurelia Brzezowska
+              - title: "Your Daily Routine, Their Daily Recon"
+                start: "15:30:00"
+                duration: "00:20"
+                persons:
+                  - name: George-Octavian Vieru
+                    public_name: George-Octavian Vieru
+              - title: "Still Supported Isn't the Same as Still Safe: Legacy Assets and the Enforcement Gap"
+                start: "16:00:00"
+                duration: "00:20"
+                persons:
+                  - name: Mateusz Madrzynski
+                    public_name: Mateusz Madrzynski
+              - title: "Ghosts in the Sky: Creating Phantom Aircraft with Mode-S Transponder Spoofing"
+                start: "16:30:00"
+                duration: "00:20"
+                persons:
+                  - name: Alex Carr
+                    public_name: Alex Carr
+            Workshops:
+              - title: Decision Making Under Pressure
+                start: "10:00:00"
+                duration: "02:30"
+                persons:
+                  - name: Jemma Davis & Lucy Smith
+                    public_name: Jemma Davis & Lucy Smith
+              - title: "Using local models and agents, and customising them for your needs"
+                start: "13:30:00"
+                duration: "02:30"
+                persons:
+                  - name: Richard Finlay Tweed
+                    public_name: Richard Finlay Tweed
+            Village 1:
+              - title: ICS Village
+                start: "10:00:00"
+                duration: "07:00"
+                persons:
+                  - name: Joe Gardiner
+                    public_name: Joe Gardiner

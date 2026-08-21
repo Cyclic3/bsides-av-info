@@ -1,0 +1,42 @@
+09:00-09:10	Opening Remarks
+09:00-09:10	 - BSides Bristol Orga
+
+09:10-09:50	The Biggest Cons, And Why They Work
+09:10-09:50	 - Sarah Armstrong-Smith
+
+09:50-10:30	So You Wanna Be A Baiter.
+09:50-10:30	 - Wayne May
+
+10:30-11:10	On-line Of Duty: How Police Are
+10:30-11:10	Cracking Down On Global Cyber Crime
+10:30-11:10	 - SWRCCU Protect Officers
+
+11:10-11:50	Automating Detection
+11:10-11:50	And Response With Tines
+11:10-11:50	 - Cameron Higgs & Pat Meehan
+
+11:50-12:30	The Perks of Not Being a Wallflower
+11:50-12:30	 - James Riley
+
+13:30-14:10	The Squid That Lost Its Shell
+13:30-14:10	 - Simon Goldsmith & Christine Sharder
+
+14:10-14:50	The Human Factor:
+14:10-14:50	Quantifying Human Risk
+14:10-14:50	 - Sara Anstey
+
+14:50-15:30	Metrics That Matter: How To Choose
+14:50-15:30	Cloud Security KPIs For Your Business
+14:50-15:30	 - Emma Yuan Fang
+
+15:30-16:10	How To Make Cyber Security
+15:30-16:10	Everyone's Business
+15:30-16:10	 - Andreea Mihai
+
+16:10-17:00	The Numbers Game:
+16:10-17:00	Lies, Damn Lies, And Statistics
+16:10-17:00	 - James Bore
+
+17:00-17:30	Closing Remarks & Charity Raffle
+17:00-17:30	 - BSides Bristol Orga
+

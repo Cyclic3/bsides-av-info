@@ -1,0 +1,126 @@
+---
+source: src/formats/mod.rs
+expression: format
+---
+SessionizeHtml:
+  sessions:
+    - title: Morning Keynote
+      speakers: []
+      room: Track 1 - Exhibition Centre
+      start: "09:45:00"
+      end: "10:25:00"
+    - title: What the Real AI Attacks of the Last Two Years Actually Taught Us
+      speakers:
+        - Liana Anca Tomescu
+      room: Track 1 - Exhibition Centre
+      start: "10:25:00"
+      end: "11:10:00"
+    - title: QUICly Changing Network Comms
+      speakers:
+        - Stuart McMurray
+      room: Track 2 - Library Bar
+      start: "10:25:00"
+      end: "11:10:00"
+    - title: "45,724 Networks, One Flipper Zero: Mapping the Wireless Threat Landscape of Northern Ireland"
+      speakers:
+        - M0r3al
+      room: Track 1 - Exhibition Centre
+      start: "11:30:00"
+      end: "12:15:00"
+    - title: "OWASP PTK: Security Testing Where the Browser Is the Source of Truth"
+      speakers:
+        - Denis Podgurskii
+      room: Track 2 - Library Bar
+      start: "11:30:00"
+      end: "12:15:00"
+    - title: Mobile Application Penetration Testing 101
+      speakers:
+        - Niall Caffrey
+      room: Workshops - Penthouse
+      start: "11:30:00"
+      end: "13:00:00"
+    - title: "Hacking Browsers: The Easy Way"
+      speakers:
+        - Robbe Van Roey / PinkDraconian
+      room: Track 1 - Exhibition Centre
+      start: "12:15:00"
+      end: "13:00:00"
+    - title: "From Code to Coverage: A Detection Engineer's Journey Through the LDAP Wilderness"
+      speakers:
+        - Andrew Schwartz
+      room: Track 2 - Library Bar
+      start: "12:15:00"
+      end: "13:00:00"
+    - title: Reverse Engineering an OAuth Supply Chain Attack
+      speakers:
+        - art
+      room: Track 1 - Exhibition Centre
+      start: "13:45:00"
+      end: "14:30:00"
+    - title: "Post Quantum Cryptography: An Introduction in Plaintext"
+      speakers:
+        - Lucy Bell
+      room: Track 2 - Library Bar
+      start: "13:45:00"
+      end: "14:30:00"
+    - title: "Inside the CSIRT: A Collaborative Live Incident Response Workshop"
+      speakers:
+        - Haula Galadima
+      room: Workshops - Penthouse
+      start: "13:45:00"
+      end: "15:15:00"
+    - title: "No CVV, No 3DS, No Problem: Chaining Trust Failures Across a Live Aviation Payment Stack"
+      speakers:
+        - Esat Berk Kandemir
+      room: Track 1 - Exhibition Centre
+      start: "14:30:00"
+      end: "15:15:00"
+    - title: "Air-Gapped Doesn't Mean Safe: Operational Security for Local AI Deployments"
+      speakers:
+        - Lillian Warner
+      room: Track 2 - Library Bar
+      start: "14:30:00"
+      end: "15:15:00"
+    - title: "Chaining the Unchainable: Finding and Exploiting Logic Flaws in Modern Web Architectures"
+      speakers:
+        - Raj Dhruv
+      room: Track 1 - Exhibition Centre
+      start: "15:40:00"
+      end: "16:25:00"
+    - title: "Bedtime Bug Hunting: A Friendly Android Auth Bypass Story"
+      speakers:
+        - Jeffrey Roe
+      room: Track 2 - Library Bar
+      start: "15:40:00"
+      end: "16:00:00"
+    - title: "Hands-On Threat Modelling: A Practical Workshop to Secure Your Product"
+      speakers:
+        - Adam
+        - Maya McDevitt
+      room: Workshops - Penthouse
+      start: "15:40:00"
+      end: "17:10:00"
+    - title: "The Silent Risk in Your Browser: Detecting Malicious Extensions"
+      speakers:
+        - Gherardo Buio Fiori
+      room: Track 2 - Library Bar
+      start: "16:00:00"
+      end: "16:25:00"
+    - title: "Leaks on the Livewire: How a Few Blocked Requests Led to a Shocking Discovery"
+      speakers:
+        - Daniel Johnston
+      room: Track 1 - Exhibition Centre
+      start: "16:25:00"
+      end: "17:10:00"
+    - title: Communicating with QR Codes
+      speakers:
+        - Ben Foxall
+      room: Track 2 - Library Bar
+      start: "16:25:00"
+      end: "17:10:00"
+    - title: Evening Keynote
+      speakers:
+        - Aleksandra Aytova
+      room: Track 1 - Exhibition Centre
+      start: "17:10:00"
+      end: "17:50:00"
