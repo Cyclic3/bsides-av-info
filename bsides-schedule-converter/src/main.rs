@@ -7,6 +7,7 @@ use serde::Serialize;
 use std::path::PathBuf;
 
 mod formats;
+mod ontime;
 mod show_file;
 
 #[derive(Parser)]
@@ -39,6 +40,11 @@ impl Event {
             let mut file = std::fs::File::create(track_name)?;
             track.make_track(&mut file)?;
             println!("Track file written to `{track_name}`");
+
+            let ontime_name = format!("{track_name}-ontime.csv");
+            let mut file = std::fs::File::create(&ontime_name)?;
+            ontime::make_ontime_export(&mut file, track)?;
+            println!("Ontime file written to `{ontime_name}`");
         }
         Ok(())
     }
