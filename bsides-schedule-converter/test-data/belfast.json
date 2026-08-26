@@ -1,6 +1,42 @@
 {
   "sessions": [
     {
+      "id": "549d5dd7-c32d-49e2-802d-f05cc83443f3",
+      "title": "Registration (Grand Ballroom Entrance)",
+      "description": null,
+      "startsAt": "2026-09-10T07:30:00Z",
+      "endsAt": "2026-09-10T08:30:00Z",
+      "isServiceSession": true,
+      "isPlenumSession": true,
+      "speakers": [],
+      "categoryItems": [],
+      "questionAnswers": [],
+      "roomId": 76855,
+      "liveUrl": null,
+      "recordingUrl": null,
+      "status": null,
+      "isInformed": false,
+      "isConfirmed": false
+    },
+    {
+      "id": "280667fd-600a-4b4a-b207-19de838641c5",
+      "title": "Opening remarks",
+      "description": null,
+      "startsAt": "2026-09-10T08:30:00Z",
+      "endsAt": "2026-09-10T08:45:00Z",
+      "isServiceSession": true,
+      "isPlenumSession": true,
+      "speakers": [],
+      "categoryItems": [],
+      "questionAnswers": [],
+      "roomId": 76855,
+      "liveUrl": null,
+      "recordingUrl": null,
+      "status": null,
+      "isInformed": false,
+      "isConfirmed": false
+    },
+    {
       "id": "1291414",
       "title": "Morning Keynote",
       "description": "The morning keynote session",
@@ -65,6 +101,24 @@
       "status": "Accepted",
       "isInformed": true,
       "isConfirmed": true
+    },
+    {
+      "id": "8449b9f7-3af8-4d55-85e2-1fe1d0389508",
+      "title": "Morning break",
+      "description": null,
+      "startsAt": "2026-09-10T10:10:00Z",
+      "endsAt": "2026-09-10T10:30:00Z",
+      "isServiceSession": true,
+      "isPlenumSession": true,
+      "speakers": [],
+      "categoryItems": [],
+      "questionAnswers": [],
+      "roomId": 76855,
+      "liveUrl": null,
+      "recordingUrl": null,
+      "status": null,
+      "isInformed": false,
+      "isConfirmed": false
     },
     {
       "id": "1252497",
@@ -187,6 +241,24 @@
       "isConfirmed": true
     },
     {
+      "id": "0b56ac2c-cb92-42c5-b0dc-2908705540bf",
+      "title": "Lunch",
+      "description": null,
+      "startsAt": "2026-09-10T12:00:00Z",
+      "endsAt": "2026-09-10T12:45:00Z",
+      "isServiceSession": true,
+      "isPlenumSession": true,
+      "speakers": [],
+      "categoryItems": [],
+      "questionAnswers": [],
+      "roomId": 76855,
+      "liveUrl": null,
+      "recordingUrl": null,
+      "status": null,
+      "isInformed": false,
+      "isConfirmed": false
+    },
+    {
       "id": "1263880",
       "title": "Reverse Engineering an OAuth Supply Chain Attack",
       "description": "Let's reconstruct an OAuth supply chain attack.\r\n\r\nIn these attacks no one really breaks into your company. The attackers simply walk through the door, using trusted credentials you've given to one of your vendors. They are impossible to prevent. But, is there really nothing we can do about it?\r\n\r\nThe best way to figure it out is to do it yourself: so, let's create 3 organisations, give them all real infrastructure, and reverse engineer a real breach to see what allows supply chain attacks to be most effective.\r\n\r\nWe'll design potential attacks (incl. LLM-assisted attacks), run them against real-world infrastructure, and find out what makes breaking in easier (or, harder) when a trusted vendor is breached.\r\n\r\nThis talk is based on the Vercel breach in April 2026.\r\nhttps://vercel.com/kb/bulletin/vercel-april-2026-security-incident\r\n\r\n---\r\n\r\nEarlier this year we got a breach notification from Vercel. The kind I've had to write myself in the past. This time I was on the other end.\r\n\r\n\"We’ve identified a security incident that involved unauthorized access to certain internal Vercel systems.\"\r\n\r\nThe email said we're (probably) not affected. But, the public information they shared got me thinking about the blanks they left out.\r\n\r\n1. What really happened?\r\n2. How can the access we grant 3rd-parties as part of standard day-to-day work be abused?\r\n3. Can an upstream breach move through our company, and propagate downstream our customers?\r\n4. What is the real risk?\r\n5. Can we do anything about it?\r\n\r\nI decided to figure it out.\r\n\r\nSo, I built the infrastructure for 3 organisations using real services and realistic architectures. Then, experimented with designing ways to break in. The results were practical insights for defence - finding out what makes these attacks easy, and what makes them hard.\r\n\r\nThat's what I'd like to share in this talk, with a (hopefully) interactive demo of a (demonstrative) OAuth supply chain attack.",
@@ -304,6 +376,24 @@
       "recordingUrl": null,
       "status": "Accepted",
       "isInformed": true,
+      "isConfirmed": false
+    },
+    {
+      "id": "67eb60f9-509f-4114-86f6-46d3323c9abb",
+      "title": "Afternoon break",
+      "description": null,
+      "startsAt": "2026-09-10T14:15:00Z",
+      "endsAt": "2026-09-10T14:40:00Z",
+      "isServiceSession": true,
+      "isPlenumSession": true,
+      "speakers": [],
+      "categoryItems": [],
+      "questionAnswers": [],
+      "roomId": 76855,
+      "liveUrl": null,
+      "recordingUrl": null,
+      "status": null,
+      "isInformed": false,
       "isConfirmed": false
     },
     {
@@ -470,6 +560,42 @@
       "status": "Accepted",
       "isInformed": true,
       "isConfirmed": false
+    },
+    {
+      "id": "f2ed6a37-2dcb-4ac7-b1ef-fef90074e73b",
+      "title": "Closing Remarks",
+      "description": null,
+      "startsAt": "2026-09-10T16:50:00Z",
+      "endsAt": "2026-09-10T17:10:00Z",
+      "isServiceSession": true,
+      "isPlenumSession": true,
+      "speakers": [],
+      "categoryItems": [],
+      "questionAnswers": [],
+      "roomId": 76855,
+      "liveUrl": null,
+      "recordingUrl": null,
+      "status": null,
+      "isInformed": false,
+      "isConfirmed": false
+    },
+    {
+      "id": "183a94d7-8565-41dd-a3bc-8110af40a8f4",
+      "title": "After Party (Haymarket, wristbands required)",
+      "description": "Haymarket, Royal Avenue, Belfast",
+      "startsAt": "2026-09-10T17:30:00Z",
+      "endsAt": "2026-09-10T22:00:00Z",
+      "isServiceSession": true,
+      "isPlenumSession": true,
+      "speakers": [],
+      "categoryItems": [],
+      "questionAnswers": [],
+      "roomId": 76855,
+      "liveUrl": null,
+      "recordingUrl": null,
+      "status": null,
+      "isInformed": false,
+      "isConfirmed": false
     }
   ],
   "speakers": [
@@ -481,7 +607,13 @@
       "tagLine": "Principal Engineer, AI @ Workday",
       "profilePicture": "https://cdn.sessionize.com/image/dcbe-400o400o1-4PxXXAMvtv4b1vsMxt7yKZ.png",
       "isTopSpeaker": false,
-      "links": [],
+      "links": [
+        {
+          "title": "Sessionize",
+          "url": "https://sessionize.com/adam-darcy",
+          "linkType": "Sessionize"
+        }
+      ],
       "sessions": [
         1258496
       ],
@@ -529,7 +661,13 @@
       "tagLine": "Security Operations at Kaseya. Breaking things in Dev, Sec, and Ops — usually all three at once",
       "profilePicture": "https://cdn.sessionize.com/image/d462-400o400o1-VrESYEAHNcYhRnFw92nQqb.png",
       "isTopSpeaker": false,
-      "links": [],
+      "links": [
+        {
+          "title": "Sessionize",
+          "url": "https://sessionize.com/arnavtripathy",
+          "linkType": "Sessionize"
+        }
+      ],
       "sessions": [
         1239047
       ],
@@ -593,7 +731,13 @@
       "tagLine": "AppSec Specialist (DAST/SAST/IAST) | OWASP Belfast Chapter Leader | OWASP PTK Creator",
       "profilePicture": "https://cdn.sessionize.com/image/c6a7-400o400o1-sGYMpLfXdg6aDjdsEnZPwa.jpg",
       "isTopSpeaker": false,
-      "links": [],
+      "links": [
+        {
+          "title": "Sessionize",
+          "url": "https://sessionize.com/denis-podgurskii",
+          "linkType": "Sessionize"
+        }
+      ],
       "sessions": [
         1236986
       ],
@@ -657,7 +801,13 @@
       "tagLine": "Engineer, Maker. Director of Tog Hackerspace . Puts on Dublinmaker",
       "profilePicture": "https://cdn.sessionize.com/image/1e60-400o400o1-SmzCh64M2CtCVQVq7M23Qw.jpg",
       "isTopSpeaker": false,
-      "links": [],
+      "links": [
+        {
+          "title": "Sessionize",
+          "url": "https://sessionize.com/jeffrey-roe",
+          "linkType": "Sessionize"
+        }
+      ],
       "sessions": [
         1245459
       ],
@@ -705,7 +855,13 @@
       "tagLine": "Secure Foresight Labs | Founder | Ethical Hacker and Cyber Security Consultant",
       "profilePicture": "https://cdn.sessionize.com/image/a488-400o400o1-aV7NneUYYtKHtE4YsBPAx6.png",
       "isTopSpeaker": false,
-      "links": [],
+      "links": [
+        {
+          "title": "Sessionize",
+          "url": "https://sessionize.com/Mario-Orr-Burns",
+          "linkType": "Sessionize"
+        }
+      ],
       "sessions": [
         1252497
       ],
@@ -785,7 +941,13 @@
       "tagLine": "Principal Offensive Security Engineer",
       "profilePicture": "https://cdn.sessionize.com/image/0ccd-400o400o1-3xVDStxoyHa1bkJmXEvMpi.png",
       "isTopSpeaker": false,
-      "links": [],
+      "links": [
+        {
+          "title": "Sessionize",
+          "url": "https://sessionize.com/stuart-mcmurray",
+          "linkType": "Sessionize"
+        }
+      ],
       "sessions": [
         1263688
       ],

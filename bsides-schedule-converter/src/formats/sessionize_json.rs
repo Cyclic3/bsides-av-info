@@ -62,7 +62,7 @@ pub struct SessionizeJson {
 pub struct Session {
     id: String,
     title: String,
-    description: String,
+    description: Option<String>,
     starts_at: DateTime<Utc>,
     ends_at: DateTime<Utc>,
     is_service_session: bool,
@@ -71,7 +71,7 @@ pub struct Session {
     category_items: Vec<i64>,
     question_answers: Vec<()>,
     room_id: i64,
-    status: String,
+    status: Option<String>,
     is_informed: bool,
     is_confirmed: bool,
 }
@@ -86,7 +86,6 @@ pub struct Speaker {
     tag_line: String,
     profile_picture: String,
     is_top_speaker: bool,
-    links: Vec<String>,
     sessions: Vec<i64>,
     full_name: String,
 }
@@ -242,11 +241,17 @@ mod test {
         assert_eq!(
             out,
             "\
+08:30-09:30\tRegistration (Grand Ballroom Entrance)
+
+09:30-09:45\tOpening remarks
+
 09:45-10:25\tMorning Keynote
 
 10:25-11:10\tWhat the Real AI Attacks of the Last
 10:25-11:10\tTwo Years Actually Taught Us
 10:25-11:10\t - Liana Anca Tomescu
+
+11:10-11:30\tMorning break
 
 11:30-12:15\t45,724 Networks, One Flipper Zero:
 11:30-12:15\tMapping the Wireless Threat Landscape
@@ -256,6 +261,8 @@ mod test {
 12:15-13:00\tHacking Browsers: The Easy Way
 12:15-13:00\t - Robbe Van Roey / PinkDraconian
 
+13:00-13:45\tLunch
+
 13:45-14:30\tReverse Engineering an OAuth Supply
 13:45-14:30\tChain Attack
 13:45-14:30\t - art
@@ -264,6 +271,8 @@ mod test {
 14:30-15:15\tTrust Failures Across a Live Aviation
 14:30-15:15\tPayment Stack
 14:30-15:15\t - Esat Berk Kandemir
+
+15:15-15:40\tAfternoon break
 
 15:40-16:25\tChaining the Unchainable: Finding and
 15:40-16:25\tExploiting Logic Flaws in Modern Web
@@ -276,6 +285,11 @@ mod test {
 
 17:10-17:50\tEvening Keynote
 17:10-17:50\t - Aleksandra Aytova
+
+17:50-18:10\tClosing Remarks
+
+18:30-23:00\tAfter Party (Haymarket, wristbands
+18:30-23:00\trequired)
 
 "
         );

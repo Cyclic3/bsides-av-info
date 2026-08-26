@@ -23,11 +23,14 @@ struct Args {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
+    println!("game");
     let args = Args::parse();
 
     let sched = std::fs::read_to_string(&args.file)?;
+    println!("Loaded file `{}`", args.file.display());
     let schedule = formats::Format::parse_from_str(&sched)?;
     let event = Event::try_from(schedule)?;
+    println!("Loaded event with {} tracks", event.tracks.len());
     event.make_show_files()?;
 
     Ok(())

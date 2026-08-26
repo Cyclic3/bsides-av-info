@@ -5,6 +5,14 @@ expression: event
 tracks:
   Track 1 - Exhibition Centre:
     sessions:
+      - title: Registration (Grand Ballroom Entrance)
+        speakers: []
+        start: "08:30:00"
+        end: "09:30:00"
+      - title: Opening remarks
+        speakers: []
+        start: "09:30:00"
+        end: "09:45:00"
       - title: Morning Keynote
         speakers: []
         start: "09:45:00"
@@ -14,6 +22,10 @@ tracks:
           - Liana Anca Tomescu
         start: "10:25:00"
         end: "11:10:00"
+      - title: Morning break
+        speakers: []
+        start: "11:10:00"
+        end: "11:30:00"
       - title: "45,724 Networks, One Flipper Zero: Mapping the Wireless Threat Landscape of Northern Ireland"
         speakers:
           - M0r3al
@@ -24,6 +36,10 @@ tracks:
           - Robbe Van Roey / PinkDraconian
         start: "12:15:00"
         end: "13:00:00"
+      - title: Lunch
+        speakers: []
+        start: "13:00:00"
+        end: "13:45:00"
       - title: Reverse Engineering an OAuth Supply Chain Attack
         speakers:
           - art
@@ -34,6 +50,10 @@ tracks:
           - Esat Berk Kandemir
         start: "14:30:00"
         end: "15:15:00"
+      - title: Afternoon break
+        speakers: []
+        start: "15:15:00"
+        end: "15:40:00"
       - title: "Chaining the Unchainable: Finding and Exploiting Logic Flaws in Modern Web Architectures"
         speakers:
           - Raj Dhruv
@@ -49,6 +69,14 @@ tracks:
           - Aleksandra Aytova
         start: "17:10:00"
         end: "17:50:00"
+      - title: Closing Remarks
+        speakers: []
+        start: "17:50:00"
+        end: "18:10:00"
+      - title: "After Party (Haymarket, wristbands required)"
+        speakers: []
+        start: "18:30:00"
+        end: "23:00:00"
   Track 2 - Library Bar:
     sessions:
       - title: QUICly Changing Network Comms

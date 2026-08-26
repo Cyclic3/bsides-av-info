@@ -30,10 +30,13 @@ impl TryFrom<Format> for crate::Event {
 impl Format {
     pub fn parse_from_str(input: &str) -> Result<Self> {
         if let Ok(pretalx) = serde_json::from_str(input) {
+            println!("Parsed pretalx JSON");
             Ok(Self::Pretalx(pretalx))
         } else if let Ok(sessionize) = serde_json::from_str(input) {
+            println!("Parsed sessionize JSON");
             Ok(Self::SessionizeJson(sessionize))
         } else if let Ok(sessionize) = input.parse() {
+            println!("Parsed sessionize HTML");
             Ok(Self::SessionizeHtml(sessionize))
         } else {
             Err(eyre!("Unable to detect schedule type"))
