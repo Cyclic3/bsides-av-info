@@ -3,14 +3,17 @@ use serde::{Deserialize, Serialize};
 
 pub mod pretalx;
 pub mod sessionize;
+pub mod sessionize_json;
 
 use pretalx::Pretalx;
 use sessionize::Sessionize;
+use sessionize_json::SessionizeJson;
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Format {
     Pretalx(Pretalx),
     SessionizeHtml(Sessionize),
+    SessionizeJson(SessionizeJson),
 }
 
 impl TryFrom<Format> for crate::Event {
@@ -19,6 +22,7 @@ impl TryFrom<Format> for crate::Event {
         match this {
             Format::Pretalx(sched) => sched.try_into(),
             Format::SessionizeHtml(sched) => sched.try_into(),
+            Format::SessionizeJson(sched) => sched.try_into(),
         }
     }
 }
@@ -27,6 +31,8 @@ impl Format {
     pub fn parse_from_str(input: &str) -> Result<Self> {
         if let Ok(pretalx) = serde_json::from_str(input) {
             Ok(Self::Pretalx(pretalx))
+        } else if let Ok(sessionize) = serde_json::from_str(input) {
+            Ok(Self::SessionizeJson(sessionize))
         } else if let Ok(sessionize) = input.parse() {
             Ok(Self::SessionizeHtml(sessionize))
         } else {

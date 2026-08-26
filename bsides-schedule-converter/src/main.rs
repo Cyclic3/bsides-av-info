@@ -10,6 +10,10 @@ mod formats;
 mod ontime;
 mod show_file;
 
+#[cfg(test)]
+#[macro_use(assert_eq)]
+extern crate pretty_assertions;
+
 #[derive(Parser)]
 struct Args {
     #[clap(long)]

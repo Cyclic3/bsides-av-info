@@ -6,8 +6,7 @@ use color_eyre::{
 use indexmap::IndexMap;
 use scraper::{ElementRef, Html, Selector};
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
-use std::sync::OnceLock;
+use std::{str::FromStr, sync::OnceLock};
 
 static CARD_SELECTOR: OnceLock<Selector> = OnceLock::new();
 static ROOM_SELECTOR: OnceLock<Selector> = OnceLock::new();
@@ -128,7 +127,6 @@ fn select_str(
 #[cfg(test)]
 mod test {
     use super::*;
-    use pretty_assertions::assert_eq;
     use std::io::Cursor;
 
     const BELFAST: &str = include_str!("../../test-data/belfast.html");

@@ -132,7 +132,6 @@ pub struct Person {
 #[cfg(test)]
 mod test {
     use super::*;
-    use pretty_assertions::assert_eq;
     use std::io::Cursor;
 
     const BRISTOL: &str = include_str!("../../test-data/bristol-2026.json");
