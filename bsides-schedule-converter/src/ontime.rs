@@ -1,5 +1,6 @@
 use chrono::NaiveTime;
 use color_eyre::Result;
+use rust_xlsxwriter::Workbook;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
@@ -20,16 +21,21 @@ Time warning 	Excel time | string 	00:02:00
 Time danger 	Excel time | string 	00:01:00
 */
 
-pub fn make_ontime_export<W: Write>(
-    writer: W,
+pub fn make_ontime_export<W: Write + Send>(
+    csv_writer: W,
+    xlsx_writer: W,
     track: &crate::show_file::ShowFile,
 ) -> Result<()> {
     let time_warning = "00:05:00".parse::<NaiveTime>()?;
     let time_danger = "00:01:00".parse::<NaiveTime>()?;
 
-    let mut writer = csv::WriterBuilder::new()
+    let mut csv_writer = csv::WriterBuilder::new()
         .has_headers(true)
-        .from_writer(writer);
+        .from_writer(csv_writer);
+
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+    worksheet.deserialize_headers::<OntimeExport>(1, 1)?;
 
     let mut intermission = OntimeExport {
         start: String::new(),
@@ -81,7 +87,8 @@ pub fn make_ontime_export<W: Write>(
             time_danger: time_danger.to_string(),
         };
 
-        writer.serialize(&data)?;
+        csv_writer.serialize(&data)?;
+        worksheet.serialize(&data)?;
 
         let duration = if let Some(talk2) = talk2 {
             // make an intermission
@@ -108,10 +115,12 @@ pub fn make_ontime_export<W: Write>(
             duration.num_seconds() % 60,
         );
         intermission.duration = duration.to_string();
-        writer.serialize(&intermission)?;
+        csv_writer.serialize(&intermission)?;
+        worksheet.serialize(&intermission)?;
     }
 
-    writer.flush()?;
+    csv_writer.flush()?;
+    workbook.save_to_writer(xlsx_writer)?;
     Ok(())
 }
 
@@ -187,8 +196,10 @@ mod test {
     fn test_show_file() {
         let mut bristol = serde_json::from_str::<Pretalx>(BRISTOL).unwrap();
 
-        let mut file = Vec::<u8>::new();
-        let mut cur = Cursor::new(&mut file);
+        let mut csv_file = Vec::<u8>::new();
+        let mut csv_cur = Cursor::new(&mut csv_file);
+        let mut xlsx_file = Vec::<u8>::new();
+        let mut xlsx_cur = Cursor::new(&mut xlsx_file);
 
         let t1 = bristol.schedule.conference.days[0]
             .rooms
@@ -196,9 +207,9 @@ mod test {
             .unwrap();
         let show = crate::show_file::ShowFile::try_from(t1).unwrap();
 
-        make_ontime_export(&mut cur, &show).unwrap();
+        make_ontime_export(&mut csv_cur, &mut xlsx_cur, &show).unwrap();
 
-        let out = String::from_utf8(file).unwrap();
+        let out = String::from_utf8(csv_file).unwrap();
         assert_eq!(
             out,
             r#"Time Start,Link start,Time End,Duration,Cue,Title,Skip,Note,Colour,End action,Timer type,Count to end,Warning time,Danger time

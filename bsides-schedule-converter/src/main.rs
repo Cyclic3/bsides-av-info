@@ -45,10 +45,14 @@ impl Event {
             track.make_track(&mut file)?;
             println!("Track file written to `{track_name}`");
 
-            let ontime_name = format!("{track_name}-ontime.csv");
-            let mut file = std::fs::File::create(&ontime_name)?;
-            ontime::make_ontime_export(&mut file, track)?;
-            println!("Ontime file written to `{ontime_name}`");
+            let ontime_name_csv = format!("{track_name}-ontime.csv");
+            let ontime_name_xlsx = format!("{track_name}-ontime.xlsx");
+            let mut csv_file = std::fs::File::create(&ontime_name_csv)?;
+            let mut xlsx_file = std::fs::File::create(&ontime_name_xlsx)?;
+            ontime::make_ontime_export(&mut csv_file, &mut xlsx_file, track)?;
+            println!(
+                "Ontime file written to `{ontime_name_csv}` and `{ontime_name_xlsx}`"
+            );
         }
         Ok(())
     }
