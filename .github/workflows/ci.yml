@@ -1,0 +1,29 @@
+name: test
+
+on:
+  push:
+    branches:
+    - '**'
+  pull_request:
+    branches:
+    - main
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  run-test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - run: rustup show
+    - run: rustup +nightly show
+    - uses: Swatinem/rust-cache@v1
+    - run: cargo test
+    - run: cargo clippy --all-targets -- -D warnings
+    - run: cargo +nightly fmt --check --all
