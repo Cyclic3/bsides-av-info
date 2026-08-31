@@ -38,6 +38,7 @@ impl TryFrom<Sessionize> for crate::Event {
             entry.sessions.push(crate::show_file::Session {
                 title: session.title,
                 speakers: session.speakers,
+                is_break: false,
                 start: session.start,
                 end: session.end,
             });

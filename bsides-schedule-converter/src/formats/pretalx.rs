@@ -85,6 +85,7 @@ impl TryFrom<Session> for crate::show_file::Session {
         Ok(Self {
             title: talk.title,
             speakers,
+            is_break: false,
             start,
             end,
         })

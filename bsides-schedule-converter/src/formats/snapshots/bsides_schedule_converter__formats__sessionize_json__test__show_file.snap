@@ -7,74 +7,90 @@ tracks:
     sessions:
       - title: Registration (Grand Ballroom Entrance)
         speakers: []
+        is_break: true
         start: "08:30:00"
         end: "09:30:00"
       - title: Opening remarks
         speakers: []
+        is_break: true
         start: "09:30:00"
         end: "09:45:00"
       - title: Morning Keynote
         speakers: []
+        is_break: false
         start: "09:45:00"
         end: "10:25:00"
       - title: What the Real AI Attacks of the Last Two Years Actually Taught Us
         speakers:
           - Liana Anca Tomescu
+        is_break: false
         start: "10:25:00"
         end: "11:10:00"
       - title: Morning break
         speakers: []
+        is_break: true
         start: "11:10:00"
         end: "11:30:00"
       - title: "45,724 Networks, One Flipper Zero: Mapping the Wireless Threat Landscape of Northern Ireland"
         speakers:
           - M0r3al
+        is_break: false
         start: "11:30:00"
         end: "12:15:00"
       - title: "Hacking Browsers: The Easy Way"
         speakers:
           - Robbe Van Roey / PinkDraconian
+        is_break: false
         start: "12:15:00"
         end: "13:00:00"
       - title: Lunch
         speakers: []
+        is_break: true
         start: "13:00:00"
         end: "13:45:00"
       - title: Reverse Engineering an OAuth Supply Chain Attack
         speakers:
           - art
+        is_break: false
         start: "13:45:00"
         end: "14:30:00"
       - title: "No CVV, No 3DS, No Problem: Chaining Trust Failures Across a Live Aviation Payment Stack"
         speakers:
           - Esat Berk Kandemir
+        is_break: false
         start: "14:30:00"
         end: "15:15:00"
       - title: Afternoon break
         speakers: []
+        is_break: true
         start: "15:15:00"
         end: "15:40:00"
       - title: "Chaining the Unchainable: Finding and Exploiting Logic Flaws in Modern Web Architectures"
         speakers:
           - Raj Dhruv
+        is_break: false
         start: "15:40:00"
         end: "16:25:00"
       - title: "Leaks on the Livewire: How a Few Blocked Requests Led to a Shocking Discovery"
         speakers:
           - Daniel Johnston
+        is_break: false
         start: "16:25:00"
         end: "17:10:00"
       - title: Evening Keynote
         speakers:
           - Aleksandra Aytova
+        is_break: false
         start: "17:10:00"
         end: "17:50:00"
       - title: Closing Remarks
         speakers: []
+        is_break: true
         start: "17:50:00"
         end: "18:10:00"
       - title: "After Party (Haymarket, wristbands required)"
         speakers: []
+        is_break: true
         start: "18:30:00"
         end: "23:00:00"
   Track 2 - Library Bar:
@@ -82,41 +98,49 @@ tracks:
       - title: QUICly Changing Network Comms
         speakers:
           - Stuart McMurray
+        is_break: false
         start: "10:25:00"
         end: "11:10:00"
       - title: "OWASP PTK: Security Testing Where the Browser Is the Source of Truth"
         speakers:
           - Denis Podgurskii
+        is_break: false
         start: "11:30:00"
         end: "12:15:00"
       - title: "From Code to Coverage: A Detection Engineer's Journey Through the LDAP Wilderness"
         speakers:
           - Andrew Schwartz
+        is_break: false
         start: "12:15:00"
         end: "13:00:00"
       - title: "Post Quantum Cryptography: An Introduction in Plaintext"
         speakers:
           - Lucy Bell
+        is_break: false
         start: "13:45:00"
         end: "14:30:00"
       - title: "Building a digital beehive: The cluster that wasn't real, but the attacks were"
         speakers:
           - Arnav Tripathy
+        is_break: false
         start: "14:30:00"
         end: "15:15:00"
       - title: "Bedtime Bug Hunting: A Friendly Android Auth Bypass Story"
         speakers:
           - Jeffrey Roe
+        is_break: false
         start: "15:40:00"
         end: "16:00:00"
       - title: "The Silent Risk in Your Browser: Detecting Malicious Extensions"
         speakers:
           - Gherardo Buio Fiori
+        is_break: false
         start: "16:00:00"
         end: "16:25:00"
       - title: Communicating with QR Codes
         speakers:
           - Ben Foxall
+        is_break: false
         start: "16:25:00"
         end: "17:10:00"
   Workshops - Penthouse:
@@ -124,16 +148,19 @@ tracks:
       - title: Mobile Application Penetration Testing 101
         speakers:
           - Niall Caffrey
+        is_break: false
         start: "11:30:00"
         end: "13:00:00"
       - title: "Inside the CSIRT: A Collaborative Live Incident Response Workshop"
         speakers:
           - Haula Galadima
+        is_break: false
         start: "13:45:00"
         end: "15:15:00"
       - title: "Hands-On Threat Modelling: A Practical Workshop to Secure Your Product"
         speakers:
           - Adam
           - Maya McDevitt
+        is_break: false
         start: "15:40:00"
         end: "17:10:00"

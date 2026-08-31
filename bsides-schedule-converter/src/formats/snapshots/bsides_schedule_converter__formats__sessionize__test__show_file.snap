@@ -7,46 +7,55 @@ tracks:
     sessions:
       - title: Morning Keynote
         speakers: []
+        is_break: false
         start: "09:45:00"
         end: "10:25:00"
       - title: What the Real AI Attacks of the Last Two Years Actually Taught Us
         speakers:
           - Liana Anca Tomescu
+        is_break: false
         start: "10:25:00"
         end: "11:10:00"
       - title: "45,724 Networks, One Flipper Zero: Mapping the Wireless Threat Landscape of Northern Ireland"
         speakers:
           - M0r3al
+        is_break: false
         start: "11:30:00"
         end: "12:15:00"
       - title: "Hacking Browsers: The Easy Way"
         speakers:
           - Robbe Van Roey / PinkDraconian
+        is_break: false
         start: "12:15:00"
         end: "13:00:00"
       - title: Reverse Engineering an OAuth Supply Chain Attack
         speakers:
           - art
+        is_break: false
         start: "13:45:00"
         end: "14:30:00"
       - title: "No CVV, No 3DS, No Problem: Chaining Trust Failures Across a Live Aviation Payment Stack"
         speakers:
           - Esat Berk Kandemir
+        is_break: false
         start: "14:30:00"
         end: "15:15:00"
       - title: "Chaining the Unchainable: Finding and Exploiting Logic Flaws in Modern Web Architectures"
         speakers:
           - Raj Dhruv
+        is_break: false
         start: "15:40:00"
         end: "16:25:00"
       - title: "Leaks on the Livewire: How a Few Blocked Requests Led to a Shocking Discovery"
         speakers:
           - Daniel Johnston
+        is_break: false
         start: "16:25:00"
         end: "17:10:00"
       - title: Evening Keynote
         speakers:
           - Aleksandra Aytova
+        is_break: false
         start: "17:10:00"
         end: "17:50:00"
   Track 2 - Library Bar:
@@ -54,41 +63,49 @@ tracks:
       - title: QUICly Changing Network Comms
         speakers:
           - Stuart McMurray
+        is_break: false
         start: "10:25:00"
         end: "11:10:00"
       - title: "OWASP PTK: Security Testing Where the Browser Is the Source of Truth"
         speakers:
           - Denis Podgurskii
+        is_break: false
         start: "11:30:00"
         end: "12:15:00"
       - title: "From Code to Coverage: A Detection Engineer's Journey Through the LDAP Wilderness"
         speakers:
           - Andrew Schwartz
+        is_break: false
         start: "12:15:00"
         end: "13:00:00"
       - title: "Post Quantum Cryptography: An Introduction in Plaintext"
         speakers:
           - Lucy Bell
+        is_break: false
         start: "13:45:00"
         end: "14:30:00"
       - title: "Air-Gapped Doesn't Mean Safe: Operational Security for Local AI Deployments"
         speakers:
           - Lillian Warner
+        is_break: false
         start: "14:30:00"
         end: "15:15:00"
       - title: "Bedtime Bug Hunting: A Friendly Android Auth Bypass Story"
         speakers:
           - Jeffrey Roe
+        is_break: false
         start: "15:40:00"
         end: "16:00:00"
       - title: "The Silent Risk in Your Browser: Detecting Malicious Extensions"
         speakers:
           - Gherardo Buio Fiori
+        is_break: false
         start: "16:00:00"
         end: "16:25:00"
       - title: Communicating with QR Codes
         speakers:
           - Ben Foxall
+        is_break: false
         start: "16:25:00"
         end: "17:10:00"
   Workshops - Penthouse:
@@ -96,16 +113,19 @@ tracks:
       - title: Mobile Application Penetration Testing 101
         speakers:
           - Niall Caffrey
+        is_break: false
         start: "11:30:00"
         end: "13:00:00"
       - title: "Inside the CSIRT: A Collaborative Live Incident Response Workshop"
         speakers:
           - Haula Galadima
+        is_break: false
         start: "13:45:00"
         end: "15:15:00"
       - title: "Hands-On Threat Modelling: A Practical Workshop to Secure Your Product"
         speakers:
           - Adam
           - Maya McDevitt
+        is_break: false
         start: "15:40:00"
         end: "17:10:00"

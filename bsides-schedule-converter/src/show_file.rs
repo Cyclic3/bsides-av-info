@@ -14,6 +14,7 @@ pub struct ShowFile {
 pub struct Session {
     pub title: String,
     pub speakers: Vec<String>,
+    pub is_break: bool,
     pub start: NaiveTime,
     pub end: NaiveTime,
 }
@@ -23,7 +24,7 @@ impl ShowFile {
     where
         W: Write,
     {
-        for talk in &self.sessions {
+        for talk in self.sessions.iter().filter(|session| !session.is_break) {
             talk.write_file(&mut writer)?;
         }
         Ok(())
