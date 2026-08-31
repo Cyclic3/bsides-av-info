@@ -49,6 +49,7 @@ pub fn make_ontime_export<W: Write + Send>(
         end: NaiveTime::default(),
         is_break: true,
         title: "Intermission".into(),
+        description: String::new(),
         speakers: Vec::new(),
     };
 

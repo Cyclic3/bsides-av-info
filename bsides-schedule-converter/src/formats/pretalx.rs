@@ -84,6 +84,7 @@ impl TryFrom<Session> for crate::show_file::Session {
 
         Ok(Self {
             title: talk.title,
+            description: talk.r#abstract + "\n" + &talk.description,
             speakers,
             is_break: false,
             start,
@@ -118,6 +119,8 @@ pub struct Day {
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Session {
     pub title: String,
+    pub r#abstract: String,
+    pub description: String,
     pub start: NaiveTime,
     pub duration: String,
     #[serde(default)]

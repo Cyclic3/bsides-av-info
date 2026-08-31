@@ -13,6 +13,7 @@ pub struct ShowFile {
 #[derive(Debug, Serialize)]
 pub struct Session {
     pub title: String,
+    pub description: String,
     pub speakers: Vec<String>,
     pub is_break: bool,
     pub start: NaiveTime,

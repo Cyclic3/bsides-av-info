@@ -33,6 +33,7 @@ impl TryFrom<SessionizeJson> for crate::Event {
             let entry = tracks.entry(session_room.clone()).or_default();
             entry.sessions.push(crate::show_file::Session {
                 title: session.title,
+                description: session.description.unwrap_or_default(),
                 speakers: session_speakers,
                 is_break: session.is_service_session,
                 start: get_time(session.starts_at),

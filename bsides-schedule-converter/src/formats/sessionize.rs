@@ -12,6 +12,7 @@ static CARD_SELECTOR: OnceLock<Selector> = OnceLock::new();
 static ROOM_SELECTOR: OnceLock<Selector> = OnceLock::new();
 static TIME_SELECTOR: OnceLock<Selector> = OnceLock::new();
 static TITLE_SELECTOR: OnceLock<Selector> = OnceLock::new();
+static DESCRIPTION_SELECTOR: OnceLock<Selector> = OnceLock::new();
 static SPEAKER_SELECTOR: OnceLock<Selector> = OnceLock::new();
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
@@ -22,6 +23,7 @@ pub struct Sessionize {
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 struct Session {
     title: String,
+    description: String,
     speakers: Vec<String>,
     room: String,
     start: NaiveTime,
@@ -37,6 +39,7 @@ impl TryFrom<Sessionize> for crate::Event {
             let entry = tracks.entry(session.room.clone()).or_default();
             entry.sessions.push(crate::show_file::Session {
                 title: session.title,
+                description: session.description,
                 speakers: session.speakers,
                 is_break: false,
                 start: session.start,
@@ -81,12 +84,17 @@ fn parse_card(card: &ElementRef<'_>) -> Result<Session> {
     let title_selector = TITLE_SELECTOR
         .get_or_init(|| Selector::parse(r#"h3.sz-session__title"#).unwrap());
     #[expect(clippy::unwrap_used)]
+    let description_selector = DESCRIPTION_SELECTOR.get_or_init(|| {
+        Selector::parse(r#"p.sz-session__description"#).unwrap()
+    });
+    #[expect(clippy::unwrap_used)]
     let speaker_selector = SPEAKER_SELECTOR
         .get_or_init(|| Selector::parse(r#"ul.sz-session__speakers"#).unwrap());
 
     let room = select_str(card, room_selector, "room")?;
     let time = select_str(card, time_selector, "time")?;
     let title = select_str(card, title_selector, "title")?;
+    let description = select_str(card, description_selector, "description")?;
     let speakers = card
         .select(speaker_selector)
         .flat_map(|ele| ele.text())
@@ -102,6 +110,7 @@ fn parse_card(card: &ElementRef<'_>) -> Result<Session> {
 
     Ok(Session {
         title,
+        description,
         speakers,
         room,
         start,
