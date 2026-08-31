@@ -31,8 +31,7 @@ where
 
         for word in session.description.split_whitespace() {
             // Remove leading and trailing punctuation
-            let word = word.trim_matches(['.', ',', '?', '"', '-', '”']);
-            let word = word.trim_matches(|chr: char| !chr.is_alphabetic());
+            let word = word.trim_matches(|chr: char| !chr.is_alphanumeric());
             if word.len() > 2 && !dict.contains(&word.to_lowercase()) {
                 words.insert(word);
             }
