@@ -1,0 +1,243 @@
+---
+source: bsides-schedule-converter/src/wordlist.rs
+expression: out
+---
+45,724 Networks, One Flipper Zero: Mapping the Wireless Threat Landscape of Northern Ireland
+After Party (Haymarket, wristbands required)
+Afternoon break
+Bedtime Bug Hunting: A Friendly Android Auth Bypass Story
+Building a digital beehive: The cluster that wasn't real, but the attacks were
+Chaining the Unchainable: Finding and Exploiting Logic Flaws in Modern Web Architectures
+Closing Remarks
+Communicating with QR Codes
+Evening Keynote
+From Code to Coverage: A Detection Engineer's Journey Through the LDAP Wilderness
+Hacking Browsers: The Easy Way
+Hands-On Threat Modelling: A Practical Workshop to Secure Your Product
+Inside the CSIRT: A Collaborative Live Incident Response Workshop
+Leaks on the Livewire: How a Few Blocked Requests Led to a Shocking Discovery
+Lunch
+Mobile Application Penetration Testing 101
+Morning Keynote
+Morning break
+No CVV, No 3DS, No Problem: Chaining Trust Failures Across a Live Aviation Payment Stack
+OWASP PTK: Security Testing Where the Browser Is the Source of Truth
+Opening remarks
+Post Quantum Cryptography: An Introduction in Plaintext
+QUICly Changing Network Comms
+Registration (Grand Ballroom Entrance)
+Reverse Engineering an OAuth Supply Chain Attack
+The Silent Risk in Your Browser: Detecting Malicious Extensions
+What the Real AI Attacks of the Last Two Years Actually Taught Us
+Adam
+Aleksandra Aytova
+Andrew Schwartz
+Arnav Tripathy
+Ben Foxall
+Daniel Johnston
+Denis Podgurskii
+Esat Berk Kandemir
+Gherardo Buio Fiori
+Haula Galadima
+Jeffrey Roe
+Liana Anca Tomescu
+Lucy Bell
+M0r3al
+Maya McDevitt
+Niall Caffrey
+Raj Dhruv
+Robbe Van Roey / PinkDraconian
+Stuart McMurray
+art
+API-first
+APIs
+ATT&CK
+Alfa
+Analyse
+AppSec
+Attendees
+CSIRT
+CVE
+CVEs
+CVV
+Centre
+Codex-style
+Cyber
+DAST
+DOM
+Dev
+ESP32-S
+Falco
+Falcosidekick
+GRU
+Go](https://go.dev
+Haymarket
+I/O
+IAST
+IDOR
+ISPs
+Impacket
+Investigatory
+IoT
+I’ll
+JavaScript-heavy
+KubeDecoy
+KubeDecoy’s
+Kubernetes
+LDAP
+LLM-assisted
+Laravel
+Livewire
+MCP
+MISP
+MITRE
+Mattermost
+Minikube
+Misconfigurations
+NGINX
+NIST
+OAuth
+OID
+OPCW
+OSINT
+OWASP
+OpenCode
+PTK
+PTK’s
+PenTest
+QUIC
+RBAC
+RCE
+SAST
+SOAPHound
+SOC
+SPA-driven
+SSH
+SSIDs
+SaaS
+TCP
+TCPish
+TJX
+TLS
+TheHive
+There’ll
+Vercel
+Viehbock
+WAF
+WPA
+WPS
+We’ll
+We’ve
+Wi-Fi
+YAML
+ZAP’s
+ab)using
+agent-assisted
+air-gapped
+airline-owned
+analyse
+analysing
+async
+attendees
+authorisation
+backend
+behaviour
+behaviours
+browser-based
+browser-driven
+browser-native
+brute-force
+clear-eyed
+client-side
+close-access
+clusters—whether
+collaboratively
+comms
+crawler-driven
+credential-stealing
+cryptographic
+cybersecurity
+day-to-day
+deconstructing
+decrypted
+deep-dive
+default-SSID
+defence
+deserialization
+design-layer
+detections
+doesn’t
+don’t
+env
+event-driven
+exfiltrating
+exfiltration
+half-PIN
+hands-on
+handson
+healthcare-adjacent
+high-level
+honeypot
+hotspots
+https://vercel.com/kb/bulletin/vercel-april-2026-security-incident
+hypotheticals
+in-browser
+in-order
+in-vehicle
+incl
+integrations
+keyspace
+lifecycle
+live-style
+low-severity
+metres
+microservice-heavy
+mindset
+mitigations
+multi-tenant
+now—and
+npm
+open-source
+organisation
+organisations
+out-of-band
+overarching
+post-exploitation
+post-incident
+post-quantum
+proxy-based
+proxying
+ransomware
+rd-parties
+real-world
+recognise
+regex
+remediation
+request-and-response
+responders
+runtime
+sanitised
+sector-by-sector
+server-side
+shell-over-TLS
+short-term
+single-page
+state-machine
+stateful
+step-by-step
+synchronisation
+third-party
+timeouts
+today’s
+unauthorised
+unglamorous
+user-interaction
+vcluster
+vcluster’s
+walkthrough
+well-documented
+we’ll
+whitelist
+whitelisted
+whitespace
+you’re

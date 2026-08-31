@@ -9,6 +9,7 @@ use std::path::PathBuf;
 mod formats;
 mod ontime;
 mod show_file;
+mod wordlist;
 
 #[cfg(test)]
 #[macro_use(assert_eq)]
@@ -33,6 +34,11 @@ fn main() -> Result<()> {
     println!("Loaded event with {} tracks", event.tracks.len());
     event.make_show_files()?;
 
+    let wordlist_file = "wordlist.txt";
+    let file = std::fs::File::create(wordlist_file)?;
+    wordlist::make_wordlist_file(file, &event)?;
+    println!("Wordlist written to `{wordlist_file}`");
+
     Ok(())
 }
 
@@ -42,6 +48,10 @@ struct Event {
 }
 
 impl Event {
+    fn iter_sessions(&self) -> impl Iterator<Item = &show_file::Session> {
+        self.tracks.values().flat_map(|track| track.sessions.iter())
+    }
+
     fn make_show_files(&self) -> Result<()> {
         for (track_name, track) in &self.tracks {
             let mut file = std::fs::File::create(track_name)?;

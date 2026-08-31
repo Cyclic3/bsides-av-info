@@ -1,0 +1,375 @@
+---
+source: bsides-schedule-converter/src/wordlist.rs
+expression: out
+---
+ADS-B and Aviation Security
+Beyond the Air Gap: How IT/OT Convergence Changes the Attack Surface
+Breaching The Perimeter: The Forgotten Attack Vector That Always Works
+Domain Protection - How We Protect Our Customers
+Fake It Till You Detect It: Live Deepfakes, Detection Gaps, and the Human Risk Management Response
+Getting started in embedded device research
+Ghost in the Kernel: Hunting BYOVD After Microsoft’s 2026 Driver Trust Shift
+Ghosts in the Sky: Creating Phantom Aircraft with Mode-S Transponder Spoofing
+Honeypot detection through machine wear and tear
+Hooked: Investigating the Phishing Attack That Targeted Me at University
+How Efficiency Can Lead to Disruption: The Evolution of Phishing Emails
+How Not to Roll Out a Security Tool: A Tale of Broken PRs and Regret
+How Resilient is your MFA?
+Keynote - Agent Smith Is in Your Stack: A Practical Guide to Governing AI Integration Before It Governs You
+Keynote - Managing The Minefield of Management Cyber Explosions - Understanding what to say and when to say it
+Love You! Now Please Buy Me Gift Cards
+Metrics that lie
+NonStop Looting: How to Steal from the Mainframe You’ve (likely) Never Heard Of
+Opening Notes Friday
+Opening Notes Saturday
+So You Want To Get Into Red Teaming: Skills, Mindset, and Myths
+Still Supported Isn't the Same as Still Safe: Legacy Assets and the Enforcement Gap
+The Human Firewall Is a Myth: Designing Security for Actual Human Behavior
+The Illusion of the cloud: From orbit to ocean floor
+The Next Internal Network: Why Your Old Playbook Doesn't Work
+The Silence of the LAMs: Detecting Rogue Language Models
+The biggest digital sovereignty risk isn’t what you think...
+They Hacked Me. I Took Their Source Code.
+Threat Modelling in the Real World: Lessons from a First-Time Practitioner
+We Didn't Have a Patch: How Defence in Depth Saved Our Customers from Log4Shell
+Who Can Become Root? An SRE Guide to Access Drift and Privilege Escalation
+Why Cybersecurity Awareness Alone Doesn't Stop Phishing: Lessons from a Human-Centred Study of 200 Users
+Your Daily Routine, Their Daily Recon
+You’ve Been Ph0wned: How Attackers Compromise Organisations Via Telephone Social Engineering
+Akash
+Alex Carr
+Andy Monaghan
+Aurelia Brzezowska
+Becky Stacey
+Chris Pritchard
+Darlington Chigozie Okeke
+David Rushmer
+Dumi Masimini
+Endurance Imasuen
+George-Octavian Vieru
+Hannah-Rose Shearman
+JBoorman
+James
+James R. McQuiggan, CISSP
+Luigi Ritacca
+Luiz Simpson
+Martin Clarke
+Mateusz Madrzynski
+Matilda Moore
+Matt Johnson
+Oliver Bouchier
+Peter Jones
+Poulomi Dwibedi
+Prithika Gopinath
+Richard Dosumu
+Shammas H (@CyberShams)
+Simon wilks
+Susanne Bitter
+Tasha Armstrong-Godwin
+Viola Lykova
+tatramaco
+ACAS
+ADS-B
+ADS-B's
+AI-powered
+AI—automating
+APIs
+ATMs
+AWS’s
+Anthropic's
+Attendees
+Aviva
+BYOVD
+BlackByte
+BlackByte’s
+CI/CD
+CISO
+CISSP
+CVE
+CVEs
+Chadd
+Cyber
+DBIR
+DCSync
+DKIM
+DMARC
+DNS
+DShield
+Decart
+DevSecOps
+Directory-focused
+Directory—it
+Directory—they
+EDR
+ElevenLabs
+Entra
+EoL
+Fast-changing
+GetReal
+Goodhart’s
+HMIs
+HPE
+High-level
+Honeypots
+IAM
+IPS
+ISC
+ISPs
+IT/OT
+Intune
+IoT
+It’s
+I’d
+I’ll
+I’m
+I’ve
+Kerberoasting
+LLM
+LLMs
+LSBU
+Lazarus/FudModule
+Log4Shell
+Luiz
+MFA
+MSP
+McQuiggan
+Microsoft’s
+Mode-S
+Monzo
+NCSC
+NCSC’s
+NetFlow
+OAuth
+OSINT
+Organisations
+PLCs
+POORTRY/STONESTOP
+PRs
+Pathway/Batch
+Pindrop
+RTCore64.sys
+RTUs
+SCA
+SDRs
+SIEM
+SLAs
+SNI
+SOC
+SPF
+SRE
+SREs
+SSO
+SaaS
+Safeguard/Guardian
+Safeguard/guardian
+Simpson’s
+Summary/further
+Surveillance-Broadcast
+Sync.so
+TACLLOCL
+TCAS
+TLS
+TTAT
+Third-party
+US-Iran
+Users/Groups
+WHCP/allowlisted
+WHOIS
+We’ll
+We’ve
+Workspace
+XYGATE
+You’ll
+access-path
+admin-to-kernel
+agentic
+allowlist
+analysed
+analysing
+anonymised
+areas—each
+attendees
+audit-mode
+battle-tested
+behaviour
+behavioural
+behaviours
+blocker
+blocklist
+blue-team
+capability—something
+cases—they
+centralised
+centre
+chaddlaw.co.uk
+clear—cyber
+codebase
+compromise—no
+contextless
+correlational
+countermeasure
+cross-signed
+cyber
+cyber-hygiene
+cybercrime
+cybercriminals
+cybersecurity
+cybersecurity—especially
+cyber’s
+day-in-the-life
+day-to-day
+decision-making
+defence
+defences
+defender’s
+demystifies
+denial-of-service
+didn’t
+don’t
+emphasise
+enabler
+end-of-life
+endpoint
+endpoints
+everyone’s
+exploit-development
+fast-changing
+fastest-growing
+favour
+fear-driven
+fibre-optic
+field-tested
+filesystem
+final-year
+fintech-enabled
+first-hand
+fraudsters
+frictionless
+front-line
+greenfield
+ground-based
+hadn’t
+helpdesks
+high-confidence
+high-fidelity
+honeypot
+honeypot's
+honeypots
+hotspots
+human-centered
+human-centred
+human-centric
+human-focused
+hunter’s
+hyperscale
+in-depth
+inlcude
+intial
+introduction/overview
+investigation.I
+isn’t
+issues—such
+is—and
+it’s
+kernel-driver
+legacy-driver
+lifecycle
+long-held
+long-term
+low-cost
+low-fidelity
+low-risk
+mechanim
+medium-sized
+messaging
+microservice
+microservices
+mid-incident
+mindset
+misconfigurations
+multi-detector
+night-vision
+non-technical
+not—then
+often-overlooked
+on-device
+on-premises
+open-source
+operationalisation
+opsec
+organisation
+organisation's
+organisational
+organisations
+own—not
+personalised
+playbook
+popular—or
+post-mortem
+practitioner-led
+pretexting
+proactively
+protocal
+ransomware
+rationalise
+real-life
+real-world
+recognising
+reframes
+remediation
+repurposing
+resilience—rather
+roadmap
+roadmaps
+rollout
+runtimes
+security-related
+segmentation—change
+self-inflicted
+self-observation
+self-reported
+shut-down
+signed-driver
+situational
+six-figure
+system’s
+takeaway
+team.In
+teamer
+teamers
+terms—during
+theory-heavy
+theory—practice
+third-party
+three-part
+today’s
+toolsets
+trade-offs
+trench-level
+ultra-advanced
+unapproved
+unauthorised
+under-assessed
+undergradutate
+unencrypted
+unshackling
+utilise
+utilising
+vishing
+voice-cloning
+walkthrough
+walkthroughs
+well-defined
+well-meaning
+well-trained
+we’ll
+we’ve
+whiteboard
+workspaces
+worst-case
+writeups
+year-long
+year-old
+you’ve
+zero-day
+zero-days
