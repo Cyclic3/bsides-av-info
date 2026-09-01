@@ -1,10 +1,8 @@
 use color_eyre::Result;
-use std::collections::BTreeSet;
-use std::collections::HashSet;
-use std::io::BufRead;
-use std::io::BufReader;
-use std::io::BufWriter;
-use std::io::Write;
+use std::{
+    collections::{BTreeSet, HashSet},
+    io::{BufRead, BufReader, BufWriter, Write},
+};
 
 /// Build a wordlist from the schedule for customising Azure speech-to-text.
 ///
