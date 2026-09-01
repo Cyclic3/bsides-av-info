@@ -32,7 +32,10 @@ where
         for word in session.description.split_whitespace() {
             // Remove leading and trailing punctuation
             let word = word.trim_matches(|chr: char| !chr.is_alphanumeric());
-            if word.len() > 2 && !dict.contains(&word.to_lowercase()) {
+            if word.len() > 2
+                && (word.chars().all(|chr| chr.is_uppercase())
+                    || !dict.contains(&word.to_lowercase()))
+            {
                 words.insert(word);
             }
         }
@@ -46,9 +49,15 @@ where
 }
 
 fn load_usr_share_dict_words() -> std::io::Result<HashSet<String>> {
-    let file = std::fs::File::open("/usr/share/dict/words")?;
-    let file = BufReader::new(file);
-    file.lines().map(|line| Ok(line?.to_lowercase())).collect()
+    let wbritish = std::fs::File::open("/usr/share/dict/british-english")?;
+    let wamerican = std::fs::File::open("/usr/share/dict/american-english")?;
+    let wbritish = BufReader::new(wbritish);
+    let wamerican = BufReader::new(wamerican);
+    wbritish
+        .lines()
+        .chain(wamerican.lines())
+        .map(|line| Ok(line?.to_lowercase()))
+        .collect()
 }
 
 #[cfg(test)]
