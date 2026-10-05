@@ -4,6 +4,8 @@
 use std::{collections::BinaryHeap, ops::Index};
 
 use chrono::{DateTime, Utc};
+use chrono_tz::Tz;
+use indexmap::IndexMap;
 
 /// Wrapper to ensure that we got the track index from a sane source
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -18,10 +20,19 @@ pub struct RoomId(pub usize);
 /// Wrapper to ensure that we got the session index from a sane source
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-struct SessionId(usize);
+pub struct SessionId(usize);
+
+// Both of these are currently single elements. This does mean that we get a (currently) pointless
+// double allocation, but means that adding extra stuff, such as accessibility/AV per-room info,
+// or track descriptions, or whatever, can be done really easily by just adding a field.
 
 #[derive(Clone, Debug)]
 pub struct TrackInfo {
+    pub name: String
+}
+
+#[derive(Clone, Debug)]
+pub struct RoomInfo {
     pub name: String
 }
 
@@ -114,6 +125,7 @@ impl PartialOrd for Session {
 }
 
 #[repr(transparent)]
+#[derive(Debug, Clone)]
 struct TimeOrderedSession(Session);
 impl PartialEq for TimeOrderedSession {
     fn eq(&self, other: &Self) -> bool {
@@ -137,28 +149,58 @@ impl PartialOrd for TimeOrderedSession {
 /// Put all of your events in here
 //
 // This has a hard invariant: we must make sure that no index changes, so ONLY APPEND!!!
-struct Event {
-    tracks: Vec<TrackInfo>,
-    rooms: Vec<String>,
+#[derive(Debug, Clone)]
+pub struct Event {
+    pub time_zone: Tz,
+    // Name indexed tracks
+    tracks: IndexMap<String, TrackInfo>,
+    // Name indexed rooms
+    rooms: IndexMap<String, RoomInfo>,
     sessions: BinaryHeap<TimeOrderedSession>,
 }
 impl Event {
-    pub fn add_room(&mut self, name: String) -> RoomId {
-        let ret = RoomId(self.rooms.len());
-        self.rooms.push(name);
-        ret
+    pub fn new(time_zone: Tz) -> Self {
+        Self {
+            time_zone,
+            tracks: Default::default(),
+            rooms: Default::default(),
+            sessions: Default::default(),
+        }
     }
-    // O(n) lookup should be fine unless you have like a million rooms for some reason
+
+    // pub fn add_room(&mut self, name: String) -> Result<RoomId> {
+    //     let ret = RoomId(self.rooms.len());
+    //     if !self.rooms.insert(name) {
+    //         // TODO: maybe gracefully handle this
+    //         panic!("")
+    //     }
+    //     ret
+    // }
     pub fn get_room_by_name(&self, name: &str) -> Option<RoomId> {
-        self.rooms.iter().position(|i_name| *i_name == name).map(RoomId)
+        self.rooms.get_index_of(name).map(RoomId)
     }
-    pub fn get_or_create_room(&mut self, name: impl Into<String> + AsRef<str>) -> RoomId {
-        self.get_room_by_name(name.as_ref()).unwrap_or_else(|| self.add_room(name.into()))
+    pub fn get_track_by_name(&self, name: &str) -> Option<TrackId> {
+        self.tracks.get_index_of(name).map(TrackId)
     }
-    pub fn add_track(&mut self, track: TrackInfo) -> TrackId {
-        let ret = TrackId(self.tracks.len());
-        self.tracks.push(track);
-        ret
+    pub fn get_or_create_room<Name: Into<String> + AsRef<str>>(&mut self, name: Name, create: impl FnOnce(Name) -> RoomInfo) -> RoomId {
+        self.get_room_by_name(name.as_ref()).unwrap_or_else(|| {
+            let ret = RoomId(self.rooms.len());
+            let room = create(name);
+            if self.rooms.insert(room.name.clone(), room).is_some() {
+                panic!("Provided room name collided with created room name");
+            }
+            ret
+        })
+    }
+    pub fn get_or_create_track<Name: Into<String> + AsRef<str>>(&mut self, name: Name, create: impl FnOnce(Name) -> TrackInfo) -> TrackId {
+        self.get_track_by_name(name.as_ref()).unwrap_or_else(|| {
+            let ret = TrackId(self.tracks.len());
+            let track = create(name);
+            if self.tracks.insert(track.name.clone(), track).is_some() {
+                panic!("Provided track name collided with created track name");
+            }
+            ret
+        })
     }
     // We don't return a "SessionIdx", because sessions do not need to refer to each other
     // and we don't want to have to juggle a nice "SessionIdx" with an evil "OptionSessionIdx"
@@ -180,7 +222,7 @@ impl Index<TrackId> for Event {
     }
 }
 impl Index<RoomId> for Event {
-    type Output = String;
+    type Output = RoomInfo;
 
     fn index(&self, index: RoomId) -> &Self::Output {
         // This index must be valid unless it came from another event
@@ -189,7 +231,7 @@ impl Index<RoomId> for Event {
 }
 
 pub struct RoomIndex {
-    pub name: String,
+    pub info: RoomInfo,
     pub sessions: Vec<SessionId>
 }
 
@@ -200,10 +242,11 @@ pub struct TrackIndex {
 
 /// Sorted events, that you can use something like index[track_id].sessions.map(EventIndex.index).binary_search_with(|i| i.runs_during(time))
 pub struct EventIndex {
+    time_zone: Tz,
     // Sessions sorted by time
     sessions: Vec<Session>,
-    tracks: Vec<TrackIndex>,
-    rooms: Vec<RoomIndex>,
+    tracks: IndexMap<String, TrackIndex>,
+    rooms: IndexMap<String, RoomIndex>,
 }
 impl EventIndex {
     /// Returns the tracks in SessionId and time sorted order
@@ -212,10 +255,10 @@ impl EventIndex {
     }
     /// Returns the tracks in TrackId sorted order
     pub fn tracks(&self) -> impl Iterator<Item=(TrackId, &TrackIndex)> + ExactSizeIterator + DoubleEndedIterator {
-        self.tracks.iter().enumerate().map(|(idx, i)| (TrackId(idx), i))
+        self.tracks.iter().enumerate().map(|(idx, (_, i))| (TrackId(idx), i))
     }
     pub fn rooms(&self) -> impl Iterator<Item=(RoomId, &RoomIndex)> + ExactSizeIterator + DoubleEndedIterator {
-        self.rooms.iter().enumerate().map(|(idx, i)| (RoomId(idx), i))
+        self.rooms.iter().enumerate().map(|(idx, (_, i))| (RoomId(idx), i))
     }
 
     pub fn new(mut event: Event) -> Self {
@@ -227,8 +270,8 @@ impl EventIndex {
         //
         // We could use Arc to avoid this, but it seems a shame to do that when we already have everything in a vec
 
-        let mut tracks: Vec<TrackIndex> = event.tracks.into_iter().map(|i| TrackIndex{info: i, sessions: vec![]}).collect();
-        let mut rooms: Vec<RoomIndex> = event.rooms.into_iter().map(|i| RoomIndex{name: i, sessions: vec![]}).collect();
+        let mut tracks: IndexMap<String, TrackIndex> = event.tracks.into_iter().map(|i| (i.0, TrackIndex{info: i.1, sessions: vec![]})).collect();
+        let mut rooms: IndexMap<String, RoomIndex> = event.rooms.into_iter().map(|i| (i.0, RoomIndex{info: i.1, sessions: vec![]})).collect();
 
         // Iterate through the events in time order, adding to the various event indexes in order
         for (idx, session) in sessions.iter().enumerate() {
@@ -242,9 +285,17 @@ impl EventIndex {
         }
 
         Self {
+            time_zone: event.time_zone,
             sessions,
             tracks,
             rooms
         }
     }
 }
+impl From<Event> for EventIndex {
+    fn from(event: Event) -> Self {
+        Self::new(event)
+    }
+}
+
+// FIXME: add tests
