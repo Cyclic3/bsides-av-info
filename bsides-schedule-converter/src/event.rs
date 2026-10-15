@@ -1,24 +1,36 @@
 //! You should fill an Event from your input (which won't care about order much), run Event::index,
-//! and then use the EventIndex for your output (which will be nicely time ordered and indexable)
+//! and then use the EventIndex for your output (which will be nicely time ordered and indexable).
+//!
+//! The Event type implements Serialize and Deserialize to keep the tests working
 
 use std::{collections::BinaryHeap, ops::Index};
 
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use indexmap::IndexMap;
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
+
+use crate::tz::TzOrOffset;
 
 /// Wrapper to ensure that we got the track index from a sane source
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize)]
+#[serde(transparent)]
 #[repr(transparent)]
 pub struct TrackId(pub usize);
 
 /// Wrapper to ensure that we got the room index from a sane source
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize)]
+#[serde(transparent)]
 #[repr(transparent)]
 pub struct RoomId(pub usize);
 
 /// Wrapper to ensure that we got the session index from a sane source
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize)]
+#[serde(transparent)]
 #[repr(transparent)]
 pub struct SessionId(usize);
 
@@ -26,12 +38,14 @@ pub struct SessionId(usize);
 // double allocation, but means that adding extra stuff, such as accessibility/AV per-room info,
 // or track descriptions, or whatever, can be done really easily by just adding a field.
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize)]
 pub struct TrackInfo {
     pub name: String
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub struct RoomInfo {
     pub name: String
 }
@@ -40,6 +54,7 @@ pub struct RoomInfo {
 ///
 /// XXX: supports a *maximum* of 64 tracks. Why do you have more than this? Please genuinely tell me.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub struct TrackSet(u64);
 impl TrackSet {
     /// Create an empty trackset
@@ -56,7 +71,7 @@ impl TrackSet {
     pub const fn is_empty(&self) -> bool {
         self.0 == 0
     }
-    pub fn iter(&self) -> impl Iterator<Item=TrackId> + DoubleEndedIterator {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item=TrackId> {
         (0..u64::BITS).map(|i| TrackId(i as usize)).filter(|i| self.contains(*i))
     }
 }
@@ -72,21 +87,23 @@ impl FromIterator<TrackId> for TrackSet {
 
 /// All of the information on a session that could be relevant to any output
 #[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Session {
     pub title: String,
     pub description: String,
-    pub room: Option<RoomId>,
     pub speakers: Vec<String>,
     pub start: DateTime<Utc>,
     pub end: DateTime<Utc>,
     /// The tracks that this session is in
-    pub tracks: TrackSet
+    pub tracks: TrackSet,
+    /// The physical location of this session. If this is none, just use the tracks with commas between them
+    pub room: Option<RoomId>,
 }
 impl Session {
-    fn clashes_with(&self, other: &Self) -> bool {
+    pub fn clashes_with(&self, other: &Self) -> bool {
         self.end >= other.start && self.start <= other.end
     }
-    fn runs_during(&self, time: chrono::DateTime<Utc>) -> std::cmp::Ordering {
+    pub fn runs_during(&self, time: chrono::DateTime<Utc>) -> std::cmp::Ordering {
         if time < self.start {
             std::cmp::Ordering::Less
         }
@@ -126,6 +143,8 @@ impl PartialOrd for Session {
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize)]
+#[serde(transparent)]
 struct TimeOrderedSession(Session);
 impl PartialEq for TimeOrderedSession {
     fn eq(&self, other: &Self) -> bool {
@@ -144,14 +163,14 @@ impl PartialOrd for TimeOrderedSession {
         Some(self.cmp(other))
     }
 }
-// impl<Tz: chrono::TimeZone> PartialOrd<DateTime<Tz>> for TimeOrdered
 
 /// Put all of your events in here
 //
 // This has a hard invariant: we must make sure that no index changes, so ONLY APPEND!!!
 #[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct Event {
-    pub time_zone: Tz,
+    pub time_zone: TzOrOffset,
     // Name indexed tracks
     tracks: IndexMap<String, TrackInfo>,
     // Name indexed rooms
@@ -159,7 +178,7 @@ pub struct Event {
     sessions: BinaryHeap<TimeOrderedSession>,
 }
 impl Event {
-    pub fn new(time_zone: Tz) -> Self {
+    pub fn new(time_zone: TzOrOffset) -> Self {
         Self {
             time_zone,
             tracks: Default::default(),
@@ -182,7 +201,7 @@ impl Event {
     pub fn get_track_by_name(&self, name: &str) -> Option<TrackId> {
         self.tracks.get_index_of(name).map(TrackId)
     }
-    pub fn get_or_create_room<Name: Into<String> + AsRef<str>>(&mut self, name: Name, create: impl FnOnce(Name) -> RoomInfo) -> RoomId {
+    pub fn get_or_create_room<Name: AsRef<str>>(&mut self, name: Name, create: impl FnOnce(Name) -> RoomInfo) -> RoomId {
         self.get_room_by_name(name.as_ref()).unwrap_or_else(|| {
             let ret = RoomId(self.rooms.len());
             let room = create(name);
@@ -192,7 +211,7 @@ impl Event {
             ret
         })
     }
-    pub fn get_or_create_track<Name: Into<String> + AsRef<str>>(&mut self, name: Name, create: impl FnOnce(Name) -> TrackInfo) -> TrackId {
+    pub fn get_or_create_track<Name: AsRef<str>>(&mut self, name: Name, create: impl FnOnce(Name) -> TrackInfo) -> TrackId {
         self.get_track_by_name(name.as_ref()).unwrap_or_else(|| {
             let ret = TrackId(self.tracks.len());
             let track = create(name);
@@ -218,7 +237,7 @@ impl Index<TrackId> for Event {
 
     fn index(&self, index: TrackId) -> &Self::Output {
         // This index must be valid unless it came from another event
-        return &self.tracks[index.0]
+        &self.tracks[index.0]
     }
 }
 impl Index<RoomId> for Event {
@@ -226,23 +245,26 @@ impl Index<RoomId> for Event {
 
     fn index(&self, index: RoomId) -> &Self::Output {
         // This index must be valid unless it came from another event
-        return &self.rooms[index.0]
+        &self.rooms[index.0]
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RoomIndex {
     pub info: RoomInfo,
     pub sessions: Vec<SessionId>
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TrackIndex {
     pub info: TrackInfo,
     pub sessions: Vec<SessionId>
 }
 
 /// Sorted events, that you can use something like index[track_id].sessions.map(EventIndex.index).binary_search_with(|i| i.runs_during(time))
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EventIndex {
-    time_zone: Tz,
+    pub time_zone: TzOrOffset,
     // Sessions sorted by time
     sessions: Vec<Session>,
     tracks: IndexMap<String, TrackIndex>,
@@ -250,14 +272,14 @@ pub struct EventIndex {
 }
 impl EventIndex {
     /// Returns the tracks in SessionId and time sorted order
-    pub fn sessions(&self) -> impl Iterator<Item=(SessionId, &Session)> + ExactSizeIterator + DoubleEndedIterator {
+    pub fn sessions(&self) -> impl ExactSizeIterator<Item=(SessionId, &Session)> + DoubleEndedIterator {
         self.sessions.iter().enumerate().map(|(idx, i)| (SessionId(idx), i))
     }
     /// Returns the tracks in TrackId sorted order
-    pub fn tracks(&self) -> impl Iterator<Item=(TrackId, &TrackIndex)> + ExactSizeIterator + DoubleEndedIterator {
+    pub fn tracks(&self) -> impl ExactSizeIterator<Item=(TrackId, &TrackIndex)> + DoubleEndedIterator {
         self.tracks.iter().enumerate().map(|(idx, (_, i))| (TrackId(idx), i))
     }
-    pub fn rooms(&self) -> impl Iterator<Item=(RoomId, &RoomIndex)> + ExactSizeIterator + DoubleEndedIterator {
+    pub fn rooms(&self) -> impl ExactSizeIterator<Item=(RoomId, &RoomIndex)> + DoubleEndedIterator {
         self.rooms.iter().enumerate().map(|(idx, (_, i))| (RoomId(idx), i))
     }
 
@@ -295,6 +317,52 @@ impl EventIndex {
 impl From<Event> for EventIndex {
     fn from(event: Event) -> Self {
         Self::new(event)
+    }
+}
+// Now that it's all sorted, we can do efficient comparison
+//
+// If an event has the same rooms, tracks and events, then they're equal
+impl PartialEq for EventIndex {
+    fn eq(&self, other: &Self) -> bool {
+        // Easy check first
+        self.time_zone == other.time_zone &&
+        // Check all the room info is the same.
+        //
+        // We're going to assume that both these and the tracks are in the same order, unless someone wants to make a separate id system
+        self.rooms.iter().zip(&other.rooms).all(|(a, b)| a.1.info == b.1.info) &&
+        // ASSUMING that there are no clashes, the sessions in a track must be in the same order, so we can actually do a direct comparison
+        //
+        // Asymptotically, building an intermediate translation table for events may be faster, but that's dumb so dumb comparison it is
+        self.tracks.iter().zip(&other.tracks).all(|(a, b)| {
+            a.1.info == b.1.info &&
+            a.1.sessions.iter().zip(&b.1.sessions).all(|(our_session, their_session)| self[*our_session] == other[*their_session])
+        })
+    }
+}
+impl Eq for EventIndex {}
+
+impl Index<TrackId> for EventIndex {
+    type Output = TrackInfo;
+
+    fn index(&self, index: TrackId) -> &Self::Output {
+        // This index must be valid unless it came from another event
+        &self.tracks[index.0].info
+    }
+}
+impl Index<RoomId> for EventIndex {
+    type Output = RoomInfo;
+
+    fn index(&self, index: RoomId) -> &Self::Output {
+        // This index must be valid unless it came from another event
+        &self.rooms[index.0].info
+    }
+}
+impl Index<SessionId> for EventIndex {
+    type Output = Session;
+
+    fn index(&self, index: SessionId) -> &Self::Output {
+        // This index must be valid unless it came from another event
+        &self.sessions[index.0]
     }
 }
 
