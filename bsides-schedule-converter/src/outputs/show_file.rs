@@ -1,7 +1,7 @@
 use chrono::{DateTime, NaiveTime, TimeDelta};
 use color_eyre::Result;
 use serde::Serialize;
-use std::{io::Write, path::Path};
+use std::{fmt::Display, io::Write, path::Path};
 
 use crate::{event::TrackIndex, outputs::EventFormatter};
 
@@ -10,6 +10,7 @@ pub type EventTimeZone = chrono::offset::Local;
 
 const TITLE_WRAP: usize = 35;
 
+#[derive(Debug)]
 pub struct ShowFile;
 impl EventFormatter for ShowFile {
     fn format(&self, event: crate::event::EventIndex, output_path: &Path) -> Result<()> {

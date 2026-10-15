@@ -1,6 +1,5 @@
 ---
 source: bsides-schedule-converter/src/inputs/mod.rs
-assertion_line: 80
 expression: format
 ---
 time_zone: Europe/London
@@ -194,7 +193,7 @@ sessions:
     tracks: 2
     room: ~
   - title: Opening Notes Saturday
-    description: "-"
+    description: ""
     speakers: []
     start: "2026-08-22T07:55:00Z"
     end: "2026-08-22T08:05:00Z"
@@ -265,7 +264,7 @@ sessions:
     tracks: 16
     room: ~
   - title: Opening Notes Friday
-    description: "-"
+    description: ""
     speakers: []
     start: "2026-08-21T07:55:00Z"
     end: "2026-08-21T08:05:00Z"

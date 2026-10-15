@@ -72,7 +72,7 @@ pub mod test {
         insta::assert_yaml_snapshot!(format);
     }
 
-    const BRISTOL: &str = include_str!("../../test-data/bristol-2026.json");
+    const BRISTOL: &str = include_str!("../../test-data/pretalx/bristol-2026.json");
 
     #[test]
     fn test_pretalx() {

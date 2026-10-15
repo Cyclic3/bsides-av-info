@@ -86,7 +86,7 @@ impl FromIterator<TrackId> for TrackSet {
 }
 
 /// All of the information on a session that could be relevant to any output
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[derive(Serialize, Deserialize)]
 pub struct Session {
     pub title: String,
@@ -112,31 +112,6 @@ impl Session {
         }
         else {
             std::cmp::Ordering::Equal
-        }
-    }
-}
-// Two sessions are equal if they happen in the same tracks, at the same time
-impl PartialEq for Session {
-    fn eq(&self, other: &Self) -> bool {
-        self.start == other.start && self.end == other.end && self.tracks == other.tracks
-    }
-}
-// impl Eq for Session {}
-
-// Check to see if a session runs before another
-impl PartialOrd for Session {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.end < other.start {
-            Some(std::cmp::Ordering::Less)
-        }
-        else if self.start > other.end {
-            Some(std::cmp::Ordering::Greater)
-        }
-        else if self.eq(other) {
-            Some(std::cmp::Ordering::Equal)
-        }
-        else {
-            None
         }
     }
 }

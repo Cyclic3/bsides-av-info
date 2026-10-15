@@ -16,7 +16,7 @@ mod outputs;
 extern crate pretty_assertions;
 
 #[derive(Parser)]
-struct Args {
+pub struct Args {
     location: String,
     output_dir: std::path::PathBuf
 }
@@ -45,6 +45,7 @@ struct Args {
 //     }
 // }
 
+// Separated out for easier testing
 pub fn main_inner(args: Args) -> Result<()> {
     println!("game");
     std::fs::create_dir_all(&args.output_dir)?;
@@ -53,7 +54,10 @@ pub fn main_inner(args: Args) -> Result<()> {
     println!("Indexing");
     let event: EventIndex = event.into();
     for formatter in DEFAULT_FORMATTERS {
-        formatter.format(event.clone(), &args.output_dir);
+        // If a formatter fails, we can keep going
+        if let Err(e) = formatter.format(event.clone(), &args.output_dir) {
+            println!("{formatter:?} failed: {e}");
+        }
     }
     Ok(())
 }

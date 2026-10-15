@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use color_eyre::Result;
 
 use crate::event::EventIndex;
@@ -6,7 +8,7 @@ use crate::event::EventIndex;
 // pub mod ontime;
 pub mod show_file;
 
-pub trait EventFormatter {
+pub trait EventFormatter: Debug {
     fn format(&self, event: EventIndex, output_dir: &std::path::Path) -> Result<()>;
 }
 
@@ -43,20 +45,33 @@ mod test {
     //
     // We could do this with streams, but this is easier to check that I haven't made a mistake :p
     fn assert_same_files(output_dir: &Path, compare_dir: &Path) {
-        let generated_files = get_files(output_dir).expect("Failed to enumerate generated files");
-        let expected_files = get_files(compare_dir).expect("Failed to enumerate expected files");
+        let mut generated_files = get_files(output_dir).expect("Failed to enumerate generated files").into_iter();
+        let mut expected_files = get_files(compare_dir).expect("Failed to enumerate expected files").into_iter();
         // Because they are in order containers, they have the same ordering (relative lexicographic ordering is preserved over prefixing)
-        for (generated_path, expected_path) in generated_files.into_iter().zip(expected_files) {
-            // We can work out the position it should be in the other one to get the correct message
+        loop {
+            let (generated_path, expected_path) = match (generated_files.next(), expected_files.next()) {
+                (None, None) => break,
+
+                // (Some(generated_path), Some(expected_path))
+                (Some(generated_path), None) => panic!("{:?} was unexpected in generated output", generated_path.strip_prefix(output_dir)),
+
+                // ((Some(generated_path), Some(expected_path)) if expected_path > generated_path) |
+                (None, Some(expected_path)) => panic!("{:?} was unexpected in generated output", expected_path.strip_prefix(compare_dir)),
+
+                (Some(generated_path), Some(expected_path)) => (generated_path, expected_path)
+            };
+
+            // We can work out the position it should have been in the other one to get the correct message
             //
             // It's a max heap, so the one that's more got skipped
             let generated_rel_path = generated_path.strip_prefix(output_dir).unwrap();
             let expected_rel_path = expected_path.strip_prefix(compare_dir).unwrap();
             match generated_rel_path.cmp(expected_rel_path) {
-                std::cmp::Ordering::Less => panic!("{expected_rel_path:?} was missing in generated output (next was {generated_rel_path:?})"),
-                std::cmp::Ordering::Greater => panic!("{generated_rel_path:?} was unexpected in generated output (next was {expected_rel_path:?})"),
+                std::cmp::Ordering::Less => panic!("{expected_rel_path:?} was missing in generated output"),
+                std::cmp::Ordering::Greater => panic!("{generated_rel_path:?} was unexpected in generated output"),
                 std::cmp::Ordering::Equal => (),
             }
+
 
             // Check the file contents are the same (both rel paths are the same here)
             let generated_file = std::fs::read(&generated_path).expect("Could not read generated file");
