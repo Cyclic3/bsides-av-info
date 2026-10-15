@@ -19,7 +19,7 @@ impl EventFormatter for ShowFile {
             for talk_id in track.sessions.iter().copied() {
                 let talk = &event[talk_id];
                 let start = talk.start.with_timezone(&event.time_zone);
-                let end = talk.start.with_timezone(&event.time_zone);
+                let end = talk.end.with_timezone(&event.time_zone);
                 let times = format_args!(
                     "{}-{}",
                     start.format("%H:%M"),

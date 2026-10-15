@@ -50,7 +50,6 @@ pub fn main_inner(args: Args) -> Result<()> {
     std::fs::create_dir_all(&args.output_dir)?;
     color_eyre::install()?;
     let event = Event::parse(&args.location, DEFAULT_PARSERS)?;
-    println!("{event:?}");
     println!("Indexing");
     let event: EventIndex = event.into();
     for formatter in DEFAULT_FORMATTERS {

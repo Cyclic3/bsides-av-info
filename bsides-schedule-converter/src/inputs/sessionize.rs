@@ -105,8 +105,8 @@ fn parse_card(event: &mut Event, card: &ElementRef<'_>) -> Result<Session> {
     //
     // TODO: we can actually infer timezone from this for some reason if we're willing to parse the text
     let mut parts = time.split_terminator('|');
-    let start = parts.next_back().ok_or_eyre("Malformed time")?.parse()?;
     let end = parts.next_back().ok_or_eyre("Malformed time")?.parse()?;
+    let start = parts.next_back().ok_or_eyre("Malformed time")?.parse()?;
 
     Ok(Session {
         title,

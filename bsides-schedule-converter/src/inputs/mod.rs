@@ -62,23 +62,23 @@ impl Event {
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
 
+    const BELFAST: &str = include_str!("../../test-data/sessionize/belfast.html");
+    #[test]
+    fn test_sessionize() {
+        let format = Event::parse_from_str(BELFAST, DEFAULT_PARSERS).unwrap();
+        insta::assert_yaml_snapshot!(format);
+    }
+
     const BRISTOL: &str = include_str!("../../test-data/bristol-2026.json");
-    const BELFAST: &str = include_str!("../../test-data/belfast.html");
 
     #[test]
     fn test_pretalx() {
         let format = Event::parse_from_str(BRISTOL, DEFAULT_PARSERS).unwrap();
-        todo!("Check against snapshot");
-        // insta::assert_yaml_snapshot!(format);
+        insta::assert_yaml_snapshot!(format);
     }
 
-    #[test]
-    fn test_sessionize() {
-        let format = Event::parse_from_str(BELFAST, DEFAULT_PARSERS).unwrap();
-        todo!("Check against snapshot");
-        // insta::assert_yaml_snapshot!(format);
-    }
+
 }

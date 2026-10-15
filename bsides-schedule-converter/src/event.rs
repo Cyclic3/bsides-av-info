@@ -155,7 +155,14 @@ impl Eq for TimeOrderedSession {}
 impl Ord for TimeOrderedSession {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // Revese the order because rust uses max heaps for some reason
-        self.0.start.cmp(&other.0.start).reverse()
+        //
+        // This will be stable AS LONG AS you don't put two things on the same tracks with the same start time with the same title
+        //
+        // obviously
+        self.0.start.cmp(&other.0.start)
+        .then_with(|| self.0.tracks.0.cmp(&other.0.tracks.0))
+        // We could remove this, for some nebulous perf gain and a lack of stability when someone screws up tracks
+        .then_with(|| self.0.title.cmp(&other.0.title))
     }
 }
 impl PartialOrd for TimeOrderedSession {
@@ -287,7 +294,9 @@ impl EventIndex {
         // Take all of the events and sort them by time
         //
         // This (should!) optimise to a in_place_collect, so no-reallocations
-        let sessions: Vec<Session> = event.sessions.drain().map(|i| i.0).collect();
+        //
+        // Once we get https://github.com/rust-lang/rust/issues/59278, we won't even need the intermediate vec
+        let sessions: Vec<Session> = event.sessions.into_sorted_vec().into_iter().map(|i| i.0).collect();
         // We now need this index to _NEVER CHANGE_ or our cool indexes all become useless
         //
         // We could use Arc to avoid this, but it seems a shame to do that when we already have everything in a vec
@@ -367,3 +376,21 @@ impl Index<SessionId> for EventIndex {
 }
 
 // FIXME: add tests
+#[cfg(test)]
+pub mod test {
+    use crate::inputs::{EventParser, sessionize::Sessionize};
+
+    use super::*;
+    // This is the test case that we're going to run non-parsers against. We should probably add more later...
+    //
+    // Also, this means that all formatter tests will fail if the sessionize formatter dies, which isn't great
+    pub fn load_belfast() -> Event {
+        Sessionize.parse_from_str(include_str!("../test-data/sessionize/belfast.html"))
+            .expect("THIS IS A DIFFERENT ISSUE! Sessionize parser is buggy")
+    }
+
+    #[test]
+    fn test_index() {
+        insta::assert_yaml_snapshot!(load_belfast().finish())
+    }
+}
