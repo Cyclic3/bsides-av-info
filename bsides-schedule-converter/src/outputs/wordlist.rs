@@ -32,10 +32,10 @@ impl WordList {
         let mut words = BTreeSet::new();
 
         for (_, session) in event.sessions() {
-            titles.insert(session.session().title.as_ref());
-            speakers.extend(session.session().speakers.iter().map(String::as_str));
+            titles.insert(session.title.as_ref());
+            speakers.extend(session.speakers.iter().map(String::as_str));
 
-            for word in session.session().description.split_whitespace() {
+            for word in session.description.split_whitespace() {
                 // Remove leading and trailing punctuation
                 let word = word.trim_matches(|chr: char| !chr.is_alphanumeric());
                 if word.len() > 2

@@ -292,10 +292,6 @@ impl<'a> IndexedSession<'a> {
     pub fn event(&self) -> &'a EventIndex {
         self.event
     }
-    #[inline(always)]
-    pub fn session(&self) -> &'a Session {
-        self.session
-    }
     /// Get the start time in the event-local time zone
     pub fn start(&self) -> DateTime<TzOrOffset> {
         self.session.start_utc.with_timezone(&self.event.time_zone)
@@ -336,11 +332,11 @@ impl Debug for IndexedSession<'_> {
         f.debug_tuple("IndexedSession").field(&self.session).finish()
     }
 }
-impl Deref for IndexedSession<'_> {
-    type Target = Session;
+impl<'a> Deref for IndexedSession<'a> {
+    type Target = &'a Session;
 
     fn deref(&self) -> &Self::Target {
-        self.session
+        &self.session
     }
 }
 impl PartialEq for IndexedSession<'_> {
