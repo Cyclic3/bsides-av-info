@@ -7,6 +7,7 @@ use crate::event::EventIndex;
 // pub mod ical;
 // pub mod ontime;
 pub mod show_file;
+pub mod wordlist;
 
 /// Enables a slightly less slow version of opening and appending each time
 ///
@@ -23,9 +24,10 @@ impl FileTracker {
             file_cache: Default::default()
         }
     }
-    pub fn open(&mut self, name: String) -> Result<&mut File> {
-        assert!(!name.contains('/'), "File traversal attack detected in generated file name {name:?}");
-        match self.file_cache.entry(name) {
+    pub fn open(&mut self, name: impl AsRef<str> + Into<String>) -> Result<&mut File> {
+        assert!(!name.as_ref().contains('/'), "File traversal attack detected in generated file name {:?}", name.as_ref());
+        // TODO: optimise this forced allocation away if needed
+        match self.file_cache.entry(name.into()) {
             std::collections::btree_map::Entry::Occupied(occupied_entry) => Ok(occupied_entry.into_mut()),
             std::collections::btree_map::Entry::Vacant(vacant_entry) => {
                 let file = std::fs::File::create(self.output_dir.join(vacant_entry.key()))?;
@@ -36,26 +38,28 @@ impl FileTracker {
 }
 
 pub trait EventFormatter: Debug {
-    fn format(&self, event: EventIndex, output_dir: &std::path::Path) -> Result<()>;
+    fn format(&self, event: &EventIndex, output_dir: &std::path::Path) -> Result<()>;
 }
 
-pub const DEFAULT_FORMATTERS: &[&dyn EventFormatter] = &[
-    &show_file::ShowFile,
-];
+pub fn default_formatters() -> Vec<Box<dyn EventFormatter>> {
+    vec![
+        Box::new(show_file::ShowFile),
+        Box::new(wordlist::WordList::with_system_dicts())
+    ]
+}
 
 #[cfg(test)]
 mod test {
     use color_eyre::Result;
     use itertools::Itertools;
-    use std::{collections::BinaryHeap, path::{Path, PathBuf}};
-    use crate::{event::test::load_bristol, outputs::show_file::ShowFile};
+    use std::{collections::BinaryHeap, ffi::OsStr, path::{Path, PathBuf}};
 
     use super::*;
 
     /// Get files in a directory and return them in lexicographical order
     ///
     /// Because of https://github.com/rust-lang/rust/issues/59278, we can't use the more sane choice of a binary heap
-    fn get_files(dir: &Path) -> Result<BinaryHeap<PathBuf>> {
+    pub fn get_files(dir: &Path) -> Result<BinaryHeap<PathBuf>> {
         std::fs::read_dir(dir)?
         .map(|dirent| {
             let dirent = dirent?;
@@ -120,7 +124,7 @@ mod test {
         }
     }
     /// Test a formatter against a known output
-    fn test_formatter(format: &impl EventFormatter, input: EventIndex, compare_dir: &std::path::Path) {
+    pub fn test_formatter(format: &impl EventFormatter, input: EventIndex, compare_dir: &(impl AsRef<OsStr> + ?Sized)) {
         // I'm making the executive decision that we don't care if somehow something creates empty dirs,
         // and only compare files + paths.
         //
@@ -128,16 +132,18 @@ mod test {
 
         // Create a scoped handle for somewhere to dump our generated data
         let output_dir = tempfile::tempdir().expect("Could not create temporary directory for testing formatter");
-        format.format(input, output_dir.path()).expect("Failed to format input");
-        assert_same_files(output_dir.path(), compare_dir);
+        format.format(&input, output_dir.path()).expect("Failed to format input");
+        assert_same_files(output_dir.path(), Path::new(compare_dir));
     }
+    #[macro_export]
     macro_rules! test_data_path {
         ($name: literal) => {
-            {
-                let mut dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-                dir.push(std::concat!("test-data/", $name));
-                dir
-            }
+            // {
+            //     let mut dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+            //     dir.push(std::concat!("test-data/", $name));
+            //     dir
+            // }
+                std::concat!(env!("CARGO_MANIFEST_DIR"), "/test-data/", $name)
         };
     }
     #[test]
@@ -151,9 +157,5 @@ mod test {
         println!("Comparing source directory {files:?} with iteself");
         // If this somehow damages source files imma be so angry
         assert_same_files(&files, &files);
-    }
-    #[test]
-    fn test_show_file() {
-        test_formatter(&ShowFile, load_bristol().finish(), &test_data_path!("show-file"));
     }
 }

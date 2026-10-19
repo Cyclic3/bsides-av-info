@@ -10,7 +10,7 @@ const TITLE_WRAP: usize = 35;
 #[derive(Debug)]
 pub struct ShowFile;
 impl EventFormatter for ShowFile {
-    fn format(&self, event: crate::event::EventIndex, output_path: &Path) -> Result<()> {
+    fn format(&self, event: &crate::event::EventIndex, output_path: &Path) -> Result<()> {
         let mut files = FileTracker::new(output_path.to_owned());
         for (session_id, talk) in event.sessions() {
             let mut data = String::new();
@@ -65,4 +65,16 @@ fn wrap_title(title: &str) -> Vec<String> {
         title_lines.push(line);
     }
     title_lines
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::ShowFile;
+    use crate::{event::test::load_bristol, outputs::test::test_formatter, test_data_path};
+
+    #[test]
+    fn test_show_file() {
+        test_formatter(&ShowFile, load_bristol().finish(), &test_data_path!("show-file"));
+    }
 }

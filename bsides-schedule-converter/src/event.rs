@@ -293,7 +293,7 @@ impl<'a> IndexedSession<'a> {
         self.event
     }
     #[inline(always)]
-    pub fn raw_session(&self) -> &'a Session {
+    pub fn session(&self) -> &'a Session {
         self.session
     }
     /// Get the start time in the event-local time zone

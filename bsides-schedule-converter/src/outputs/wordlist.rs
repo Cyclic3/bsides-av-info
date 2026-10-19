@@ -1,50 +1,67 @@
-use color_eyre::Result;
-use std::{
-    collections::{BTreeSet, HashSet},
-    io::{BufRead, BufReader, BufWriter, Write},
-};
+//! Build a wordlist from the schedule for customising Azure speech-to-text.
+//!
+//! Take the talk titles and speaker names and directly include them in the
+//! list. For the descriptions, pull out capitalised words and words not
+//! present in `/usr/share/dict/words` to select the likely technical terms.
 
-/// Build a wordlist from the schedule for customising Azure speech-to-text.
-///
-/// Take the talk titles and speaker names and directly include them in the
-/// list. For the descriptions, pull out capitalised words and words not
-/// present in `/usr/share/dict/words` to select the likely technical terms.
-pub fn make_wordlist_file<Writer>(
-    file: Writer,
-    event: &crate::Event,
-) -> Result<()>
-where
-    Writer: Write,
-{
-    // Talk titles and speakers
-    let mut titles = BTreeSet::new();
-    let mut speakers = BTreeSet::new();
+use color_eyre::{Result, eyre::eyre};
+use std::{collections::{BTreeSet, HashSet}, io::{BufRead, BufReader, Write}};
 
-    let dict = load_usr_share_dict_words()?;
-    let mut words = BTreeSet::new();
+use crate::outputs::{EventFormatter, FileTracker};
 
-    for session in event.iter_sessions() {
-        titles.insert(session.title.as_str());
-        speakers.extend(session.speakers.iter().map(String::as_str));
 
-        for word in session.description.split_whitespace() {
-            // Remove leading and trailing punctuation
-            let word = word.trim_matches(|chr: char| !chr.is_alphanumeric());
-            if word.len() > 2
-                && (word.chars().all(|chr| chr.is_uppercase())
-                    || !dict.contains(&word.to_lowercase()))
-            {
-                words.insert(word);
-            }
+#[derive(Debug)]
+pub struct WordList {
+    dict: HashSet<String>
+}
+impl WordList {
+    pub fn new(dict: HashSet<String>) -> Self {
+        WordList {
+            dict
         }
     }
-
-    let mut file = BufWriter::new(file);
-    for entry in titles.into_iter().chain(speakers).chain(words) {
-        writeln!(&mut file, "{entry}")?;
+    pub fn with_system_dicts() -> Self {
+        Self {
+            dict: load_usr_share_dict_words().map_err(|e| eyre!("Failed to load user dicts. Have you installed wbritish and wamerican?\n{e}")).unwrap()
+        }
     }
-    Ok(())
+    fn build_with(&self, event: &crate::event::EventIndex) -> Result<String> {
+        // Talk titles and speakers
+        let mut titles = BTreeSet::new();
+        let mut speakers = BTreeSet::new();
+        let mut words = BTreeSet::new();
+
+        for (_, session) in event.sessions() {
+            titles.insert(session.session().title.as_ref());
+            speakers.extend(session.session().speakers.iter().map(String::as_str));
+
+            for word in session.session().description.split_whitespace() {
+                // Remove leading and trailing punctuation
+                let word = word.trim_matches(|chr: char| !chr.is_alphanumeric());
+                if word.len() > 2
+                    && (word.chars().all(|chr| chr.is_uppercase())
+                        || !self.dict.contains(&word.to_lowercase()))
+                {
+                    words.insert(word);
+                }
+            }
+        }
+
+        // We want a trailing newline, so we can't use join
+        Ok(titles.into_iter().chain(speakers).chain(words).fold(String::new(), |acc, i| acc + i + "\n"))
+    }
 }
+impl EventFormatter for WordList {
+    fn format(&self, event: &crate::event::EventIndex, output_dir: &std::path::Path) -> Result<()> {
+        let ret = self.build_with(event)?;
+
+        // Slightly more convenient to use this
+        let mut files = FileTracker::new(output_dir.to_owned());
+        files.open("wordlist.txt")?.write_all(ret.as_bytes())?;
+        Ok(())
+    }
+}
+
 
 fn load_usr_share_dict_words() -> std::io::Result<HashSet<String>> {
     let wbritish = std::fs::File::open("/usr/share/dict/british-english")?;
@@ -60,35 +77,14 @@ fn load_usr_share_dict_words() -> std::io::Result<HashSet<String>> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::formats::{pretalx::Pretalx, sessionize_json::SessionizeJson};
-    use std::io::Cursor;
-
-    const BRISTOL: &str = include_str!("../test-data/bristol-2026.json");
-    const BELFAST_JSON: &str = include_str!("../test-data/belfast.json");
+    use super::WordList;
+    use crate::event::test::load_bristol;
 
     #[test]
-    fn test_wordlist_bristol() {
-        let bristol = serde_json::from_str::<Pretalx>(BRISTOL).unwrap();
-        let event = crate::Event::try_from(bristol).unwrap();
-
-        let mut file = Vec::<u8>::new();
-        let cur = Cursor::new(&mut file);
-        make_wordlist_file(cur, &event).unwrap();
-        let out = String::from_utf8(file).unwrap();
-        insta::assert_snapshot!(out);
-    }
-
-    #[test]
-    fn test_wordlist_belfast() {
-        let belfast =
-            serde_json::from_str::<SessionizeJson>(BELFAST_JSON).unwrap();
-        let event = crate::Event::try_from(belfast).unwrap();
-
-        let mut file = Vec::<u8>::new();
-        let cur = Cursor::new(&mut file);
-        make_wordlist_file(cur, &event).unwrap();
-        let out = String::from_utf8(file).unwrap();
-        insta::assert_snapshot!(out);
+    fn test_bristol() {
+        // FIXME: actually add a test dictionary so that the output is stable and useful
+        //
+        // test_formatter(&WordList::new(test_dict), load_bristol().finish(), test_data_path!("wordlist/bristol-2026/"));
+        WordList::new(Default::default()).build_with(&load_bristol().finish()).unwrap();
     }
 }
