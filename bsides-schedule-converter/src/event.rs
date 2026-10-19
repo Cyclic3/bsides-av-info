@@ -3,13 +3,15 @@
 //!
 //! The Event type implements Serialize and Deserialize to keep the tests working
 
-use std::{collections::BinaryHeap, ops::Index};
+use core::fmt;
+use std::{collections::BinaryHeap, fmt::{Debug, Display}, ops::{Deref, Index}};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Datelike, NaiveDate, NaiveTime, TimeDelta, Utc, naive::NaiveDateDaysIterator};
 use chrono_tz::Tz;
 use indexmap::IndexMap;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 use crate::tz::TzOrOffset;
 
@@ -50,6 +52,42 @@ pub struct RoomInfo {
     pub name: String
 }
 
+/// Iterates over the bits in a trackset
+pub struct TrackSetIterator {
+    remaining_tracks: u64,
+    pos: usize
+}
+impl Iterator for TrackSetIterator {
+    type Item = TrackId;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if self.remaining_tracks == 0 {
+                return None
+            }
+            if self.remaining_tracks & 1 != 0 {
+                let ret = Some(TrackId(self.pos));
+                self.remaining_tracks >>= 1;
+                self.pos += 1;
+                return ret
+            }
+            else {
+                self.remaining_tracks >>= 1;
+                self.pos += 1;
+            }
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
+}
+impl ExactSizeIterator for TrackSetIterator {
+    fn len(&self) -> usize {
+        self.remaining_tracks.count_ones() as usize
+    }
+}
+
 /// Reference the tracks without having to do a dynamic allocation each time (yay!
 ///
 /// XXX: supports a *maximum* of 64 tracks. Why do you have more than this? Please genuinely tell me.
@@ -71,8 +109,20 @@ impl TrackSet {
     pub const fn is_empty(&self) -> bool {
         self.0 == 0
     }
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item=TrackId> {
-        (0..u64::BITS).map(|i| TrackId(i as usize)).filter(|i| self.contains(*i))
+    pub fn iter(&self) -> TrackSetIterator {
+        TrackSetIterator { remaining_tracks: self.0, pos: 0 }
+    }
+    pub fn len(&self) -> usize {
+        self.0.count_ones() as usize
+    }
+}
+impl IntoIterator for TrackSet {
+    type Item = TrackId;
+
+    type IntoIter = TrackSetIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 impl FromIterator<TrackId> for TrackSet {
@@ -92,8 +142,8 @@ pub struct Session {
     pub title: String,
     pub description: String,
     pub speakers: Vec<String>,
-    pub start: DateTime<Utc>,
-    pub end: DateTime<Utc>,
+    pub start_utc: DateTime<Utc>,
+    pub end_utc: DateTime<Utc>,
     /// The tracks that this session is in
     pub tracks: TrackSet,
     /// The physical location of this session. If this is none, just use the tracks with commas between them
@@ -101,13 +151,13 @@ pub struct Session {
 }
 impl Session {
     pub fn clashes_with(&self, other: &Self) -> bool {
-        self.end >= other.start && self.start <= other.end
+        self.end_utc >= other.start_utc && self.start_utc <= other.end_utc
     }
     pub fn runs_during(&self, time: chrono::DateTime<Utc>) -> std::cmp::Ordering {
-        if time < self.start {
+        if time < self.start_utc {
             std::cmp::Ordering::Less
         }
-        else if time > self.end {
+        else if time > self.end_utc {
             std::cmp::Ordering::Greater
         }
         else {
@@ -123,7 +173,7 @@ impl Session {
 struct TimeOrderedSession(Session);
 impl PartialEq for TimeOrderedSession {
     fn eq(&self, other: &Self) -> bool {
-        self.0.start == other.0.start
+        self.0.start_utc == other.0.start_utc
     }
 }
 impl Eq for TimeOrderedSession {}
@@ -134,7 +184,7 @@ impl Ord for TimeOrderedSession {
         // This will be stable AS LONG AS you don't put two things on the same tracks with the same start time with the same title
         //
         // obviously
-        self.0.start.cmp(&other.0.start)
+        self.0.start_utc.cmp(&other.0.start_utc)
         .then_with(|| self.0.tracks.0.cmp(&other.0.tracks.0))
         // We could remove this, for some nebulous perf gain and a lack of stability when someone screws up tracks
         .then_with(|| self.0.title.cmp(&other.0.title))
@@ -243,7 +293,76 @@ pub struct TrackIndex {
     pub sessions: Vec<SessionId>
 }
 
+#[derive(Clone, Copy)]
+pub struct IndexedSession<'a> {
+    event: &'a EventIndex,
+    session: &'a Session
+}
+impl<'a> IndexedSession<'a> {
+    #[inline(always)]
+    pub fn event(&self) -> &'a EventIndex {
+        self.event
+    }
+    #[inline(always)]
+    pub fn raw_session(&self) -> &'a Session {
+        self.session
+    }
+    /// Get the start time in the event-local time zone
+    pub fn start(&self) -> DateTime<TzOrOffset> {
+        self.session.start_utc.with_timezone(&self.event.time_zone)
+    }
+    /// Get the end time in the event-local time zone
+    pub fn end(&self) -> DateTime<TzOrOffset> {
+        self.session.end_utc.with_timezone(&self.event.time_zone)
+    }
+    /// Get the index of the day in the event
+    pub fn day(&self) -> u64 {
+        let ret = (self.start() - self.event.start()).num_days();
+        // This cannot be negative, as we came from a sorted list :(
+        debug_assert!(ret >= 0, "Got an indexed session before the start of the event");
+        ret as u64
+    }
+    /// Get a sequence of `day{day + 1}-{track_name}` that this session is in, skipping empty components
+    pub fn maybe_day_track_name(&self) -> impl ExactSizeIterator<Item=String> {
+        if self.event().single_day() {
+            if self.event().tracks().len() == 1 {
+                either::Left(either::Left(std::iter::once(Default::default())))
+            }
+            else {
+                either::Left(either::Right(self.tracks.iter().map(move |track_id| self.event()[track_id].name.clone())))
+            }
+        }
+        else {
+            if self.event().tracks().len() == 1 {
+                either::Right(either::Left(std::iter::once(format!("day{}", self.day() + 1))))
+            }
+            else {
+                either::Right(either::Right(self.tracks.iter().map(|track_id| format!("day{}-{}", self.day() + 1, self.event()[track_id].name))))
+            }
+        }
+    }
+}
+impl Debug for IndexedSession<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("IndexedSession").field(&self.session).finish()
+    }
+}
+impl Deref for IndexedSession<'_> {
+    type Target = Session;
+
+    fn deref(&self) -> &Self::Target {
+        self.session
+    }
+}
+impl PartialEq for IndexedSession<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.session == other.session
+    }
+}
+impl Eq for IndexedSession<'_> {}
+
 /// Sorted events, that you can use something like index[track_id].sessions.map(EventIndex.index).binary_search_with(|i| i.runs_during(time))
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EventIndex {
     pub time_zone: TzOrOffset,
@@ -251,21 +370,65 @@ pub struct EventIndex {
     sessions: Vec<Session>,
     tracks: IndexMap<String, TrackIndex>,
     rooms: IndexMap<String, RoomIndex>,
+
+    // These'll be referenced a lot, so we might as well precompute them
+    #[serde_as(as = "crate::tz::Rfc9557DateTime")]
+    start: DateTime<TzOrOffset>,
+    #[serde_as(as = "crate::tz::Rfc9557DateTime")]
+    end: DateTime<TzOrOffset>,
+    last_day: NaiveDate
 }
 impl EventIndex {
+    /// Get the session with the given id
+    //
+    // Since they should have got the SessionId from us, any out of bounds access is a serious logic error,
+    // so we don't give them a chance to recover
+    pub fn session(&self, id: SessionId) -> IndexedSession {
+        IndexedSession { event: self, session: &self.sessions[id.0] }
+    }
     /// Returns the tracks in SessionId and time sorted order
-    pub fn sessions(&self) -> impl ExactSizeIterator<Item=(SessionId, &Session)> + DoubleEndedIterator {
-        self.sessions.iter().enumerate().map(|(idx, i)| (SessionId(idx), i))
+    pub fn sessions(&self) -> impl ExactSizeIterator<Item=(SessionId, IndexedSession)> + DoubleEndedIterator {
+        self.sessions.iter().enumerate().map(|(idx, i)| (SessionId(idx), IndexedSession{event: self, session: i}))
     }
     /// Returns the tracks in TrackId sorted order
     pub fn tracks(&self) -> impl ExactSizeIterator<Item=(TrackId, &TrackIndex)> + DoubleEndedIterator {
         self.tracks.iter().enumerate().map(|(idx, (_, i))| (TrackId(idx), i))
     }
+    /// Returns the tracks in RoomId sorted order
     pub fn rooms(&self) -> impl ExactSizeIterator<Item=(RoomId, &RoomIndex)> + DoubleEndedIterator {
         self.rooms.iter().enumerate().map(|(idx, (_, i))| (RoomId(idx), i))
     }
+    /// The start time of the first event, in the event-local time zone
+    pub fn start(&self) -> DateTime<TzOrOffset> { self.start }
+    /// The end time of the last event, in the event-local time zone
+    pub fn end(&self) -> DateTime<TzOrOffset> { self.end }
+    /// The last day of the event (checks for midnight)
+    pub fn last_day(&self) -> NaiveDate { self.last_day }
+    /// A more efficiently way than `self.days.len()` to check if there is only a single day in the event
+    pub fn single_day(&self) -> bool { self.start.date_naive() == self.last_day }
+    /// Iterate over each day the event runs
+    pub fn days(&self) -> impl ExactSizeIterator<Item=NaiveDate> + DoubleEndedIterator {
+        let first = self.start().date_naive();
+        let mut last_dt = self.end();
+        // Handle event ending on midnight: we don't get an extra day smh
+        if last_dt.time() == NaiveTime::MIN {
+            last_dt -= TimeDelta::seconds(1);
+        }
+        let last = last_dt.date_naive();
+        let n_days_minus_1 = (last - first).num_days();
+        // If your event is running for more than 10 million years, then you can make a PR
+        assert!(n_days_minus_1 <= (u32::MAX as i64 - 1), "Event duration {first} to {last} is more than (2^32 - 2) days (>10 million years!)");
+        // Has to be a u32 exclusive range so that we get a free exact size iterator impl
+        (0u32..n_days_minus_1 as u32 + 1)
+        .map(move |i| first + TimeDelta::days(i as i64))
+    }
 
-    pub fn new(mut event: Event) -> Self {
+    pub fn new(event: Event) -> Self {
+        // Check that we actually have a session in our event
+        if event.sessions.is_empty() {
+            panic!("Asked to index an empty event");
+        }
+
         // Take all of the events and sort them by time
         //
         // This (should!) optimise to a in_place_collect, so no-reallocations
@@ -290,11 +453,21 @@ impl EventIndex {
             }
         }
 
+        let start =  sessions.first().unwrap().start_utc.with_timezone(&event.time_zone);
+        let end = sessions.last().unwrap().end_utc.with_timezone(&event.time_zone);
+        // Move back one second.
+        //
+        // If the entire event is zero seconds long and starts at midnight, then this will break.
+        // Send a PR if you can actually justify why you would care
+        let last_day = (end - TimeDelta::seconds(1)).date_naive();
         Self {
+            start,
+            end,
+            last_day,
             time_zone: event.time_zone,
             sessions,
             tracks,
-            rooms
+            rooms,
         }
     }
 }
@@ -319,7 +492,8 @@ impl PartialEq for EventIndex {
         // Asymptotically, building an intermediate translation table for events may be faster, but that's dumb so dumb comparison it is
         self.tracks.iter().zip(&other.tracks).all(|(a, b)| {
             a.1.info == b.1.info &&
-            a.1.sessions.iter().zip(&b.1.sessions).all(|(our_session, their_session)| self[*our_session] == other[*their_session])
+            a.1.sessions.iter().zip(&b.1.sessions)
+                .all(|(our_session, their_session)| self.session(*our_session) == self.session(*their_session))
         })
     }
 }
@@ -341,31 +515,43 @@ impl Index<RoomId> for EventIndex {
         &self.rooms[index.0].info
     }
 }
-impl Index<SessionId> for EventIndex {
-    type Output = Session;
-
-    fn index(&self, index: SessionId) -> &Self::Output {
-        // This index must be valid unless it came from another event
-        &self.sessions[index.0]
-    }
-}
 
 // FIXME: add tests
 #[cfg(test)]
 pub mod test {
-    use crate::inputs::{EventParser, sessionize::Sessionize};
+    use crate::inputs::{EventParser, pretalx::Pretalx};
 
     use super::*;
     // This is the test case that we're going to run non-parsers against. We should probably add more later...
     //
-    // Also, this means that all formatter tests will fail if the sessionize formatter dies, which isn't great
-    pub fn load_belfast() -> Event {
-        Sessionize.parse_from_str(include_str!("../test-data/sessionize/belfast.html"))
+    // It has multiple tracks and multiple days, so should be enough to mess something up if you weren't careful
+    //
+    // Also, this means that all formatter tests will fail if the pretalx formatter dies, which isn't great
+    pub fn load_bristol() -> Event {
+        Pretalx.parse_from_str(include_str!("../test-data/pretalx/bristol-2026.json"))
             .expect("THIS IS A DIFFERENT ISSUE! Sessionize parser is buggy")
     }
 
     #[test]
     fn test_index() {
-        insta::assert_yaml_snapshot!(load_belfast().finish())
+        insta::assert_yaml_snapshot!(load_bristol().finish())
+    }
+
+    #[test]
+    fn test_track_loop() {
+        let expected = [2, 3, 7];
+        let ts: TrackSet = expected.into_iter().map(TrackId).collect();
+        assert_eq!(ts.0, expected.into_iter().map(|i| 1 << i).fold(0, |acc, i| acc | i), "Bit set implementation wonky");
+        let res: Vec<_> = ts.into_iter().map(|i| i.0).collect();
+        assert_eq!(expected.as_slice(), res, "IntoIter impl wonky");
+    }
+
+    #[test]
+    fn test_single_track_loop() {
+        let expected = [0];
+        let ts: TrackSet = expected.into_iter().map(TrackId).collect();
+        assert_eq!(ts.0, expected.into_iter().map(|i| 1 << i).fold(0, |acc, i| acc | i), "Bit set implementation wonky");
+        let res: Vec<_> = ts.into_iter().map(|i| i.0).collect();
+        assert_eq!(expected.as_slice(), res, "IntoIter impl wonky");
     }
 }
