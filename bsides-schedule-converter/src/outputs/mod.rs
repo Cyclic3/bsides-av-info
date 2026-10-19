@@ -1,8 +1,8 @@
-use std::{collections::BTreeMap, fmt::{Debug, Display}, fs::File, path::{self, Path, PathBuf}};
+use std::{collections::BTreeMap, fmt::Debug, fs::File, path::PathBuf};
 
 use color_eyre::Result;
 
-use crate::event::{EventIndex, IndexedSession};
+use crate::event::EventIndex;
 
 // pub mod ical;
 // pub mod ontime;
@@ -35,44 +35,6 @@ impl FileTracker {
     }
 }
 
-// /// A helper struct to allow you l
-// pub struct FileNamer<F: Fn(IndexedSession) -> std::fmt::Arguments> {
-//     namer: F,
-//     output_dir: std::path::PathBuf,
-// }
-// impl<F: Fn(IndexedSession) -> std::fmt::Arguments> FileNamer<F> {
-//     pub fn new(namer: F, output_dir: std::path::PathBuf) -> Self {
-//         Self {
-//             namer,
-//             output_dir,
-//             files: Default::default()
-//         }
-//     }
-//     // Name files as day{idx+1}-{track name}{suffix}, eliding components if there is only one
-//     pub fn day_track<S: Display>(event: &EventIndex, suffix: S, output_dir: std::path::PathBuf) -> FileNamer<_> {
-//         let track_component =
-//             if event.tracks().len() == 1 {
-//                 |session| format_args!("")
-//             }
-//             else {
-//                 |session: IndexedSession| format_args!("{}", session.track)
-//             };
-
-//         FileNamer::new(|session| format_args!("day{}-{}{suffix}", session.day() + 1, session.track_name), output_dir)
-//     }
-
-//     pub fn open(&mut self, session: IndexedSession) -> Result<&mut File> {
-//         let key = self.namer(session);
-//         match self.files.entry(key) {
-//             std::collections::btree_map::Entry::Occupied(occupied_entry) => Ok(occupied_entry.into_mut()),
-//             std::collections::btree_map::Entry::Vacant(vacant_entry) => {
-//                 let file = std::fs::File::create(self.output_dir.join(key.to_owned()))?;
-//                 Ok(vacant_entry.insert(file))
-//             },
-//         }
-//     }
-// }
-
 pub trait EventFormatter: Debug {
     fn format(&self, event: EventIndex, output_dir: &std::path::Path) -> Result<()>;
 }
@@ -85,7 +47,7 @@ pub const DEFAULT_FORMATTERS: &[&dyn EventFormatter] = &[
 mod test {
     use color_eyre::Result;
     use itertools::Itertools;
-    use std::{collections::{BTreeSet, BinaryHeap}, path::{Path, PathBuf}};
+    use std::{collections::BinaryHeap, path::{Path, PathBuf}};
     use crate::{event::test::load_bristol, outputs::show_file::ShowFile};
 
     use super::*;

@@ -1,7 +1,6 @@
-use chrono::NaiveDate;
 use color_eyre::Result;
 use itertools::Itertools;
-use std::{collections::BTreeMap, fmt::Write as FmtWrite, io::Write, path::Path};
+use std::{fmt::Write as FmtWrite, io::Write, path::Path};
 
 use crate::outputs::{EventFormatter, FileTracker};
 

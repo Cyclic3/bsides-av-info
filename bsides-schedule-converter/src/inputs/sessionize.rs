@@ -1,5 +1,3 @@
-use chrono::{DateTime, FixedOffset, NaiveDateTime, Offset, TimeZone, Utc};
-use chrono_tz::{Tz, TzOffset};
 use color_eyre::{
     Result,
     eyre::{OptionExt, eyre},
@@ -8,7 +6,7 @@ use regex::regex;
 use scraper::{ElementRef, Html, Selector};
 use std::{fmt::Display, str::FromStr, sync::OnceLock};
 
-use crate::{event::{Event, RoomInfo, Session, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
+use crate::{event::{Event, Session, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
 
 static CARD_SELECTOR: OnceLock<Selector> = OnceLock::new();
 static ROOM_SELECTOR: OnceLock<Selector> = OnceLock::new();

@@ -3,13 +3,10 @@
 //!
 //! The Event type implements Serialize and Deserialize to keep the tests working
 
-use core::fmt;
-use std::{collections::BinaryHeap, fmt::{Debug, Display}, ops::{Deref, Index}};
+use std::{collections::BinaryHeap, fmt::Debug, ops::{Deref, Index}};
 
-use chrono::{DateTime, Datelike, NaiveDate, NaiveTime, TimeDelta, Utc, naive::NaiveDateDaysIterator};
-use chrono_tz::Tz;
+use chrono::{DateTime, NaiveDate, NaiveTime, TimeDelta, Utc};
 use indexmap::IndexMap;
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
@@ -219,14 +216,6 @@ impl Event {
         }
     }
 
-    // pub fn add_room(&mut self, name: String) -> Result<RoomId> {
-    //     let ret = RoomId(self.rooms.len());
-    //     if !self.rooms.insert(name) {
-    //         // TODO: maybe gracefully handle this
-    //         panic!("")
-    //     }
-    //     ret
-    // }
     pub fn get_room_by_name(&self, name: &str) -> Option<RoomId> {
         self.rooms.get_index_of(name).map(RoomId)
     }
@@ -383,11 +372,11 @@ impl EventIndex {
     //
     // Since they should have got the SessionId from us, any out of bounds access is a serious logic error,
     // so we don't give them a chance to recover
-    pub fn session(&self, id: SessionId) -> IndexedSession {
+    pub fn session<'a>(&'a self, id: SessionId) -> IndexedSession<'a> {
         IndexedSession { event: self, session: &self.sessions[id.0] }
     }
     /// Returns the tracks in SessionId and time sorted order
-    pub fn sessions(&self) -> impl ExactSizeIterator<Item=(SessionId, IndexedSession)> + DoubleEndedIterator {
+    pub fn sessions<'a>(&'a self) -> impl ExactSizeIterator<Item=(SessionId, IndexedSession<'a>)> + DoubleEndedIterator {
         self.sessions.iter().enumerate().map(|(idx, i)| (SessionId(idx), IndexedSession{event: self, session: i}))
     }
     /// Returns the tracks in TrackId sorted order

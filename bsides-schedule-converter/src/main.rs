@@ -21,30 +21,6 @@ pub struct Args {
     output_dir: std::path::PathBuf
 }
 
-// impl Event {
-//     fn iter_sessions(&self) -> impl Iterator<Item = &show_file::Session> {
-//         self.tracks.values().flat_map(|track| track.sessions.iter())
-//     }
-
-//     fn make_show_files(&self) -> Result<()> {
-//         for (track_name, track) in &self.tracks {
-//             let mut file = std::fs::File::create(track_name)?;
-//             track.make_track(&mut file)?;
-//             println!("Track file written to `{track_name}`");
-
-//             let ontime_name_csv = format!("{track_name}-ontime.csv");
-//             let ontime_name_xlsx = format!("{track_name}-ontime.xlsx");
-//             let mut csv_file = std::fs::File::create(&ontime_name_csv)?;
-//             let mut xlsx_file = std::fs::File::create(&ontime_name_xlsx)?;
-//             ontime::make_ontime_export(&mut csv_file, &mut xlsx_file, track)?;
-//             println!(
-//                 "Ontime file written to `{ontime_name_csv}` and `{ontime_name_xlsx}`"
-//             );
-//         }
-//         Ok(())
-//     }
-// }
-
 // Separated out for easier testing
 pub fn main_inner(args: Args) -> Result<()> {
     println!("game");
