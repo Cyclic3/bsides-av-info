@@ -113,8 +113,8 @@ fn parse_card(event: &mut Event, card: &ElementRef<'_>) -> Result<Session> {
         description,
         speakers,
         room: None,
-        start,
-        end,
+        start_utc: start,
+        end_utc: end,
         tracks: TrackSet::from_iter([track])
     })
 }

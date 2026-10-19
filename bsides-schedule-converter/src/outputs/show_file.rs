@@ -1,43 +1,48 @@
-use chrono::{DateTime, NaiveTime, TimeDelta};
+use chrono::NaiveDate;
 use color_eyre::Result;
-use serde::Serialize;
-use std::{fmt::Display, io::Write, path::Path};
+use itertools::Itertools;
+use std::{collections::BTreeMap, fmt::Write as FmtWrite, io::Write, path::Path};
 
-use crate::{event::TrackIndex, outputs::EventFormatter};
+use crate::outputs::{EventFormatter, FileTracker};
 
 /// TODO: actually do this intelligently
-pub type EventTimeZone = chrono::offset::Local;
-
 const TITLE_WRAP: usize = 35;
 
 #[derive(Debug)]
 pub struct ShowFile;
 impl EventFormatter for ShowFile {
     fn format(&self, event: crate::event::EventIndex, output_path: &Path) -> Result<()> {
-        for (_track_id, track) in event.tracks() {
-            let track_name = &track.info.name;
-            let mut file = std::fs::File::create(output_path.join(std::path::Path::new(track_name)))?;
-            for talk_id in track.sessions.iter().copied() {
-                let talk = &event[talk_id];
-                let start = talk.start.with_timezone(&event.time_zone);
-                let end = talk.end.with_timezone(&event.time_zone);
-                let times = format_args!(
-                    "{}-{}",
-                    start.format("%H:%M"),
-                    end.format("%H:%M"),
-                );
+        let mut files = FileTracker::new(output_path.to_owned());
+        for (session_id, talk) in event.sessions() {
+            let mut data = String::new();
+            let start = talk.start();
+            // TODO: no way do we end up straddling midnight?
+            let end = talk.end();
+            let times = format_args!(
+                "{}-{}",
+                start.format("%H:%M"),
+                end.format("%H:%M"),
+            );
 
-                let title_lines = wrap_title(&talk.title);
+            let title_lines = wrap_title(&talk.title);
 
-                for line in title_lines {
-                    writeln!(&mut file, "{times}\t{line}")?;
-                }
-                for speaker_name in &talk.speakers {
-                    writeln!(&mut file, "{times}\t - {speaker_name}")?;
-                }
-                writeln!(&mut file)?;
+            for line in title_lines {
+                writeln!(&mut data, "{times}\t{line}")?;
             }
-            println!("Track file written to `{track_name}`");
+            for speaker_name in &talk.speakers {
+                writeln!(&mut data, "{times}\t - {speaker_name}")?;
+            }
+            writeln!(&mut data)?;
+
+            let a = talk.maybe_day_track_name().collect_vec();
+            if a.is_empty() {
+                panic!("{session_id:?}: {talk:?}")
+            }
+
+            for name in talk.maybe_day_track_name() {
+                println!("{session_id:?}: ({}, {}) -> {name}", talk.day()+1, talk.tracks.iter().map(|i| &event[i].name).join(", "));
+                write!(files.open(name.to_string())?, "{}", data)?;
+            }
         }
         Ok(())
     }

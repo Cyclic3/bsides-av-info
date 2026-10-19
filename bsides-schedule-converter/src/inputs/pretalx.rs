@@ -16,16 +16,23 @@ impl Display for Pretalx {
 impl EventParser for Pretalx {
     fn parse_from_str(&self, data: &str) -> Result<Event> {
         // Parse the json
-        let PretalxJson { schedule: Schedule { conference } } = serde_json::from_str(data)?;
+        let PretalxJson { schedule: Schedule { mut conference } } = serde_json::from_str(data)?;
         let time_zone = conference.time_zone_name.parse()?;
 
         // Pump it
         let mut ret = Event::new(time_zone);
-        for day in conference.days.into_iter() {
-            // For some reason tracks are stored in rooms, which have slightly different pluralisation >:(
-            for (track_name, sessions) in day.rooms {
-                let track_id = ret.get_or_create_track(track_name, |name| TrackInfo { name });
-                for mut talk in sessions {
+        for track in &conference.tracks {
+            let track_id = ret.get_or_create_track(&track.name, |name| TrackInfo { name: name.clone() });
+            for day in &mut conference.days {
+                let Some(cur_track) = day.rooms.swap_remove(&track.name)
+                else {
+                    println!(
+                        "Missing key for day {}: {}",
+                        day.index, track.name
+                    );
+                    continue;
+                };
+                for mut talk in cur_track {
                     let speakers = talk.persons
                         .into_iter()
                         .map(|person| {
@@ -68,8 +75,8 @@ impl EventParser for Pretalx {
                         description: talk.r#abstract,
                         room: None,
                         speakers,
-                        start,
-                        end: start + duration,
+                        start_utc: start,
+                        end_utc: start + duration,
                         tracks: TrackSet::from_iter([track_id]),
                     });
                 }
