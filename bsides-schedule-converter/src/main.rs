@@ -3,7 +3,7 @@
 use clap::Parser;
 use color_eyre::Result;
 
-use crate::{event::{Event, EventIndex}, inputs::DEFAULT_PARSERS, outputs::default_formatters};
+use crate::{event::{Event}, inputs::DEFAULT_PARSERS, outputs::default_formatters};
 
 mod tz;
 mod event;
@@ -26,9 +26,9 @@ pub fn main_inner(args: Args) -> Result<()> {
     println!("game");
     std::fs::create_dir_all(&args.output_dir)?;
     color_eyre::install()?;
+    println!("Parsing");
     let event = Event::parse(&args.location, DEFAULT_PARSERS)?;
-    println!("Indexing");
-    let event: EventIndex = event.into();
+    println!("Formatting");
     for formatter in default_formatters() {
         // If a formatter fails, we can keep going
         if let Err(e) = formatter.format(&event, &args.output_dir) {

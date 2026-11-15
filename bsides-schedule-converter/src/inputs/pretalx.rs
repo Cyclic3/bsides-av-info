@@ -5,7 +5,7 @@ use color_eyre::{Result, eyre::OptionExt};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
-use crate::{event::{Event, TrackInfo, TrackSet}, inputs::EventParser};
+use crate::{event::{Event, EventBuilder, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
 
 pub struct Pretalx;
 impl Display for Pretalx {
@@ -17,10 +17,10 @@ impl EventParser for Pretalx {
     fn parse_from_str(&self, data: &str) -> Result<Event> {
         // Parse the json
         let PretalxJson { schedule: Schedule { mut conference } } = serde_json::from_str(data)?;
-        let time_zone = conference.time_zone_name.parse()?;
+        let time_zone: TzOrOffset = conference.time_zone_name.parse()?;
 
         // Pump it
-        let mut ret = Event::new(time_zone);
+        let mut ret = EventBuilder::new();
         for track in &conference.tracks {
             let track_id = ret.get_or_create_track(&track.name, |name| TrackInfo { name: name.clone() });
             for day in &mut conference.days {
@@ -54,7 +54,7 @@ impl EventParser for Pretalx {
                     let start =
                         day.date
                             .and_time(talk.start)
-                            .and_local_timezone(ret.time_zone)
+                            .and_local_timezone(time_zone)
                             .single().expect("Got an ambiguous start time")
                             .with_timezone(&Utc);
                     let (hours, minutes) = talk
@@ -83,7 +83,7 @@ impl EventParser for Pretalx {
             }
         }
 
-        Ok(ret)
+        Ok(ret.finish(time_zone))
     }
 }
 

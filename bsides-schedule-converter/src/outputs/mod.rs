@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, fmt::Debug, fs::File, path::PathBuf};
 
 use color_eyre::Result;
 
-use crate::event::EventIndex;
+use crate::event::Event;
 
 // pub mod ical;
 // pub mod ontime;
@@ -38,7 +38,7 @@ impl FileTracker {
 }
 
 pub trait EventFormatter: Debug {
-    fn format(&self, event: &EventIndex, output_dir: &std::path::Path) -> Result<()>;
+    fn format(&self, event: &Event, output_dir: &std::path::Path) -> Result<()>;
 }
 
 pub fn default_formatters() -> Vec<Box<dyn EventFormatter>> {
@@ -125,7 +125,7 @@ mod test {
         }
     }
     /// Test a formatter against a known output
-    pub fn test_formatter(format: &impl EventFormatter, input: EventIndex, compare_dir: &(impl AsRef<OsStr> + ?Sized)) {
+    pub fn test_formatter(format: &impl EventFormatter, input: Event, compare_dir: &(impl AsRef<OsStr> + ?Sized)) {
         // I'm making the executive decision that we don't care if somehow something creates empty dirs,
         // and only compare files + paths.
         //

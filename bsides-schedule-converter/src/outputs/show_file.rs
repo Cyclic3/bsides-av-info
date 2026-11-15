@@ -9,7 +9,7 @@ const TITLE_WRAP: usize = 35;
 #[derive(Debug)]
 pub struct ShowFile;
 impl EventFormatter for ShowFile {
-    fn format(&self, event: &crate::event::EventIndex, output_path: &Path) -> Result<()> {
+    fn format(&self, event: &crate::event::Event, output_path: &Path) -> Result<()> {
         let mut files = FileTracker::new(output_path.to_owned());
         for talk in event.sessions() {
             let mut data = String::new();

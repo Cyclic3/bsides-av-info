@@ -6,7 +6,7 @@ use regex::regex;
 use scraper::{ElementRef, Html, Selector};
 use std::{fmt::Display, str::FromStr, sync::OnceLock};
 
-use crate::{event::{Event, Session, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
+use crate::{event::{Event, EventBuilder, Session, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
 
 static CARD_SELECTOR: OnceLock<Selector> = OnceLock::new();
 static ROOM_SELECTOR: OnceLock<Selector> = OnceLock::new();
@@ -52,7 +52,7 @@ impl EventParser for Sessionize {
         let card_selector = CARD_SELECTOR
         .get_or_init(|| Selector::parse(r#"li.sz-session"#).unwrap());
 
-        let mut ret = Event::new(time_zone);
+        let mut ret = EventBuilder::new();
         for card in fragment.select(card_selector) {
             match parse_card(&mut ret, &card) {
                 Ok(session) => ret.add_session(session),
@@ -60,11 +60,11 @@ impl EventParser for Sessionize {
             }
         }
 
-        Ok(ret)
+        Ok(ret.finish(time_zone))
     }
 }
 
-fn parse_card(event: &mut Event, card: &ElementRef<'_>) -> Result<Session> {
+fn parse_card(event: &mut EventBuilder, card: &ElementRef<'_>) -> Result<Session> {
     #[expect(clippy::unwrap_used)]
     let room_selector = ROOM_SELECTOR
         .get_or_init(|| Selector::parse(r#"div.sz-session__room"#).unwrap());

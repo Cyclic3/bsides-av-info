@@ -200,23 +200,17 @@ impl PartialOrd for TimeOrderedSession {
 //
 // This has a hard invariant: we must make sure that no index changes, so ONLY APPEND!!!
 #[derive(Debug, Clone)]
-#[derive(Serialize, Deserialize)]
-pub struct Event {
-    pub time_zone: TzOrOffset,
+#[derive(Default, Serialize, Deserialize)]
+pub struct EventBuilder {
     // Name indexed tracks
     tracks: IndexMap<String, TrackInfo>,
     // Name indexed rooms
     rooms: IndexMap<String, RoomInfo>,
     sessions: BinaryHeap<TimeOrderedSession>,
 }
-impl Event {
-    pub fn new(time_zone: TzOrOffset) -> Self {
-        Self {
-            time_zone,
-            tracks: Default::default(),
-            rooms: Default::default(),
-            sessions: Default::default(),
-        }
+impl EventBuilder {
+    pub fn new() -> Self {
+        Default::default()
     }
 
     pub fn get_room_by_name(&self, name: &str) -> Option<RoomId> {
@@ -252,11 +246,11 @@ impl Event {
     }
 
     // We take ownership to make sure that noone invalidates our index
-    pub fn finish(self) -> EventIndex {
-        EventIndex::new(self)
+    pub fn finish<T>(self, time_zone: T) -> Event where TzOrOffset: From<T> {
+        Event::new(self, time_zone.into())
     }
 }
-impl Index<TrackId> for Event {
+impl Index<TrackId> for EventBuilder {
     type Output = TrackInfo;
 
     fn index(&self, index: TrackId) -> &Self::Output {
@@ -264,12 +258,39 @@ impl Index<TrackId> for Event {
         &self.tracks[index.0]
     }
 }
-impl Index<RoomId> for Event {
+impl Index<RoomId> for EventBuilder {
     type Output = RoomInfo;
 
     fn index(&self, index: RoomId) -> &Self::Output {
         // This index must be valid unless it came from another event
         &self.rooms[index.0]
+    }
+}
+// Makes writing some tests a lot easier if we can just EventIndex::filter().sessions().collect() into a new event
+impl<'a> FromIterator<IndexedSession<'a>> for EventBuilder {
+    fn from_iter<T: IntoIterator<Item = IndexedSession<'a>>>(iter: T) -> Self {
+        let mut ret = EventBuilder::new();
+        for i in iter {
+            let room = i.room.map(|parent_room_id| {
+                let parent_room = &i.event[parent_room_id];
+                ret.get_or_create_room(&parent_room.name, |_| parent_room.info.clone())
+            });
+            let tracks = i.tracks.into_iter().map(|parent_track_id| {
+                let parent_track = &i.event[parent_track_id];
+                ret.get_or_create_track(&parent_track.name, |_| parent_track.info.clone())
+            }).collect();
+            // I'm explicitly listing this so that I don't miss anything when transfering ids
+            ret.add_session(Session {
+                title: i.title.clone(),
+                description: i.description.clone(),
+                speakers: i.speakers.clone(),
+                start_utc: i.start_utc,
+                end_utc: i.end_utc,
+                tracks,
+                room
+            });
+        }
+        ret
     }
 }
 
@@ -302,12 +323,12 @@ impl Deref for TrackIndex {
 #[derive(Clone, Copy)]
 pub struct IndexedSession<'a> {
     id: SessionId,
-    event: &'a EventIndex,
+    event: &'a Event,
     session: &'a Session,
 }
 impl<'a> IndexedSession<'a> {
     #[inline(always)]
-    pub fn event(&self) -> &'a EventIndex {
+    pub fn event(&self) -> &'a Event {
         self.event
     }
     #[inline(always)]
@@ -368,10 +389,21 @@ impl PartialEq for IndexedSession<'_> {
 }
 impl Eq for IndexedSession<'_> {}
 
-/// Sorted events, that you can use something like index[track_id].sessions.map(EventIndex.index).binary_search_with(|i| i.runs_during(time))
+///
+/// Every collection of sessions and session ids in this object remain sorted, both by ids and time.
+/// As well as being a nice property, it means that [`Event::filter`] is O(log(n)) for any of the exposed methods!
+///
+/// It also exposes a `FromIterator` method, which (reasonably) efficiently allows the following workflow:
+/// ```rust
+///     let bristol = crate::event::test::load_bristol();
+///     let bristol_without_opener: crate::event::Event =
+///         bristol.sessions()
+///         .filter(|i| !i.title.starts_with("Opening Notes "))
+///         .collect();
+/// ```
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct EventIndex {
+pub struct Event {
     pub time_zone: TzOrOffset,
     // Sessions sorted by time
     sessions: Vec<Session>,
@@ -385,7 +417,7 @@ pub struct EventIndex {
     end: DateTime<TzOrOffset>,
     last_day: NaiveDate
 }
-impl EventIndex {
+impl Event {
     /// Get the session with the given id
     //
     // Since they should have got the SessionId from us, any out of bounds access is a serious logic error,
@@ -438,12 +470,12 @@ impl EventIndex {
         .map(move |i| first + TimeDelta::days(i as i64))
     }
 
-    /// Reasonably efficiently filter sessions by track/room/time or some combination thereof
+    /// Efficiently filter sessions by track/room/time or some combination thereof. The worst-case for any exposed method is O(log n)
     pub fn filter<'a>(&'a self) -> Filtered<'a, ()> {
         Filtered { event: self, id_range: 0..self.sessions.len(), session_ids: () }
     }
 
-    pub fn new(event: Event) -> Self {
+    pub fn new(event: EventBuilder, time_zone: TzOrOffset) -> Self {
         // Check that we actually have a session in our event
         if event.sessions.is_empty() {
             panic!("Asked to index an empty event");
@@ -473,8 +505,8 @@ impl EventIndex {
             }
         }
 
-        let start =  sessions.first().unwrap().start_utc.with_timezone(&event.time_zone);
-        let end = sessions.last().unwrap().end_utc.with_timezone(&event.time_zone);
+        let start =  sessions.first().unwrap().start_utc.with_timezone(&time_zone);
+        let end = sessions.last().unwrap().end_utc.with_timezone(&time_zone);
         // Move back one second.
         //
         // If the entire event is zero seconds long and starts at midnight, then this will break.
@@ -484,22 +516,17 @@ impl EventIndex {
             start,
             end,
             last_day,
-            time_zone: event.time_zone,
+            time_zone,
             sessions,
             tracks,
             rooms,
         }
     }
 }
-impl From<Event> for EventIndex {
-    fn from(event: Event) -> Self {
-        Self::new(event)
-    }
-}
 // Now that it's all sorted, we can do efficient comparison
 //
 // If an event has the same rooms, tracks and events, then they're equal
-impl PartialEq for EventIndex {
+impl PartialEq for Event {
     fn eq(&self, other: &Self) -> bool {
         // Easy check first
         self.time_zone == other.time_zone &&
@@ -517,9 +544,8 @@ impl PartialEq for EventIndex {
         })
     }
 }
-impl Eq for EventIndex {}
-
-impl Index<TrackId> for EventIndex {
+impl Eq for Event {}
+impl Index<TrackId> for Event {
     type Output = TrackIndex;
 
     fn index(&self, index: TrackId) -> &Self::Output {
@@ -527,7 +553,7 @@ impl Index<TrackId> for EventIndex {
         &self.tracks[index.0]
     }
 }
-impl Index<RoomId> for EventIndex {
+impl Index<RoomId> for Event {
     type Output = RoomIndex;
 
     fn index(&self, index: RoomId) -> &Self::Output {
@@ -535,9 +561,17 @@ impl Index<RoomId> for EventIndex {
         &self.rooms[index.0]
     }
 }
+impl<'a> FromIterator<IndexedSession<'a>> for Event {
+    fn from_iter<T: IntoIterator<Item = IndexedSession<'a>>>(iter: T) -> Self {
+        let mut iter = iter.into_iter().peekable();
+        let parent = iter.peek().expect("Cannot create an EventIndex from an empty session iterator: need timezone").event;
+        let tz = parent.time_zone;
+        Event::new(iter.collect(), tz)
+    }
+}
 
 pub struct Filtered<'a, Inner> {
-    pub event: &'a EventIndex,
+    pub event: &'a Event,
     id_range: Range<usize>,
     session_ids: Inner
 }
@@ -635,10 +669,9 @@ use crate::inputs::{EventParser, pretalx::Pretalx};
     // It has multiple tracks and multiple days, so should be enough to mess something up if you weren't careful
     //
     // Also, this means that all formatter tests will fail if the pretalx formatter dies, which isn't great
-    pub fn load_bristol() -> EventIndex {
+    pub fn load_bristol() -> Event {
         Pretalx.parse_from_str(include_str!("../test-data/pretalx/bristol-2026.json"))
             .expect("THIS IS A DIFFERENT ISSUE! Sessionize parser is buggy")
-            .finish()
     }
 
     #[test]
@@ -681,6 +714,27 @@ use crate::inputs::{EventParser, pretalx::Pretalx};
         println!("Sessions: {res:#?}");
         assert_eq!(res.len(), 1, "Filtered sessions had wrong length");
         assert!(res[0].title.starts_with("Fake It Till You Detect It:"), "First session incorrect");
+    }
+
+    #[test]
+    fn test_event_collect() {
+        let bristol = crate::event::test::load_bristol();
+        let bristol_without_opener: crate::event::Event =
+            bristol.sessions()
+            .filter(|i| !i.title.starts_with("Opening Notes "))
+            .collect();
+        assert_eq!(bristol.days().len(), bristol_without_opener.days().len());
+        assert_eq!(bristol.sessions().len(), bristol_without_opener.sessions().len() + 2);
+        assert_eq!(
+            bristol.rooms.values().filter(|&i| !i.sessions.is_empty()).cloned().map(|i| i.info).sorted_by_cached_key(|i| i.name.clone()).collect_vec(),
+            bristol_without_opener.rooms.values().cloned().map(|i| i.info).sorted_by_cached_key(|i| i.name.clone()).collect_vec(),
+            "Room mismatch"
+        );
+        assert_eq!(
+            bristol.tracks.values().filter(|&i| !i.sessions.is_empty()).cloned().map(|i| i.info).sorted_by_cached_key(|i| i.name.clone()).collect_vec(),
+            bristol_without_opener.tracks.values().cloned().map(|i| i.info).sorted_by_cached_key(|i| i.name.clone()).collect_vec(),
+            "Track mismatch"
+        );
     }
 
     #[test]

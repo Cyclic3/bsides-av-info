@@ -25,7 +25,7 @@ impl WordList {
             dict: load_usr_share_dict_words().map_err(|e| eyre!("Failed to load user dicts. Have you installed wbritish and wamerican?\n{e}")).unwrap()
         }
     }
-    fn build_with(&self, event: &crate::event::EventIndex) -> Result<String> {
+    fn build_with(&self, event: &crate::event::Event) -> Result<String> {
         // Talk titles and speakers
         let mut titles = BTreeSet::new();
         let mut speakers = BTreeSet::new();
@@ -52,7 +52,7 @@ impl WordList {
     }
 }
 impl EventFormatter for WordList {
-    fn format(&self, event: &crate::event::EventIndex, output_dir: &std::path::Path) -> Result<()> {
+    fn format(&self, event: &crate::event::Event, output_dir: &std::path::Path) -> Result<()> {
         let ret = self.build_with(event)?;
 
         // Slightly more convenient to use this
