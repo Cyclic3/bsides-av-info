@@ -3,9 +3,9 @@
 //!
 //! The Event type implements Serialize and Deserialize to keep the tests working
 
-use std::{collections::BinaryHeap, fmt::Debug, ops::{Deref, Index}};
+use std::{collections::BinaryHeap, fmt::Debug, ops::{Deref, Index, Range, RangeBounds}};
 
-use chrono::{DateTime, NaiveDate, NaiveTime, TimeDelta, Utc};
+use chrono::{DateTime, Days, NaiveDate, NaiveTime, TimeDelta, TimeZone, Utc};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -102,6 +102,9 @@ impl TrackSet {
     }
     pub const fn contains(&self, track: TrackId) -> bool {
         self.0 & (1<<track.0) != 0
+    }
+    pub const fn intersection(&self, other: TrackSet) -> Self {
+        Self(self.0 & other.0)
     }
     pub const fn is_empty(&self) -> bool {
         self.0 == 0
@@ -275,22 +278,41 @@ pub struct RoomIndex {
     pub info: RoomInfo,
     pub sessions: Vec<SessionId>
 }
+impl Deref for RoomIndex {
+    type Target = RoomInfo;
+
+    fn deref(&self) -> &Self::Target {
+        &self.info
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TrackIndex {
     pub info: TrackInfo,
     pub sessions: Vec<SessionId>
 }
+impl Deref for TrackIndex {
+    type Target = TrackInfo;
+
+    fn deref(&self) -> &Self::Target {
+        &self.info
+    }
+}
 
 #[derive(Clone, Copy)]
 pub struct IndexedSession<'a> {
+    id: SessionId,
     event: &'a EventIndex,
-    session: &'a Session
+    session: &'a Session,
 }
 impl<'a> IndexedSession<'a> {
     #[inline(always)]
     pub fn event(&self) -> &'a EventIndex {
         self.event
+    }
+    #[inline(always)]
+    pub fn id(&self) -> SessionId {
+        self.id
     }
     /// Get the start time in the event-local time zone
     pub fn start(&self) -> DateTime<TzOrOffset> {
@@ -314,7 +336,7 @@ impl<'a> IndexedSession<'a> {
                 either::Left(either::Left(std::iter::once(Default::default())))
             }
             else {
-                either::Left(either::Right(self.tracks.iter().map(move |track_id| self.event()[track_id].name.clone())))
+                either::Left(either::Right(self.tracks.iter().map(move |track_id| self.event()[track_id].info.name.clone())))
             }
         }
         else {
@@ -322,7 +344,7 @@ impl<'a> IndexedSession<'a> {
                 either::Right(either::Left(std::iter::once(format!("day{}", self.day() + 1))))
             }
             else {
-                either::Right(either::Right(self.tracks.iter().map(|track_id| format!("day{}-{}", self.day() + 1, self.event()[track_id].name))))
+                either::Right(either::Right(self.tracks.iter().map(|track_id| format!("day{}-{}", self.day() + 1, self.event()[track_id].info.name))))
             }
         }
     }
@@ -369,11 +391,11 @@ impl EventIndex {
     // Since they should have got the SessionId from us, any out of bounds access is a serious logic error,
     // so we don't give them a chance to recover
     pub fn session<'a>(&'a self, id: SessionId) -> IndexedSession<'a> {
-        IndexedSession { event: self, session: &self.sessions[id.0] }
+        IndexedSession { event: self, session: &self.sessions[id.0], id }
     }
-    /// Returns the tracks in SessionId and time sorted order
-    pub fn sessions<'a>(&'a self) -> impl ExactSizeIterator<Item=(SessionId, IndexedSession<'a>)> + DoubleEndedIterator {
-        self.sessions.iter().enumerate().map(|(idx, i)| (SessionId(idx), IndexedSession{event: self, session: i}))
+    /// Return the sessions by id
+    pub fn sessions<'a>(&'a self) -> impl ExactSizeIterator<Item = IndexedSession<'a>> + DoubleEndedIterator {
+        self.sessions.iter().enumerate().map(|(id, session)| IndexedSession { id: SessionId(id), event: self, session })
     }
     /// Returns the tracks in TrackId sorted order
     pub fn tracks(&self) -> impl ExactSizeIterator<Item=(TrackId, &TrackIndex)> + DoubleEndedIterator {
@@ -383,10 +405,18 @@ impl EventIndex {
     pub fn rooms(&self) -> impl ExactSizeIterator<Item=(RoomId, &RoomIndex)> + DoubleEndedIterator {
         self.rooms.iter().enumerate().map(|(idx, (_, i))| (RoomId(idx), i))
     }
+    pub fn get_track_by_name(&self, name: &str) -> Option<TrackId> {
+        self.tracks.get_index_of(name).map(TrackId)
+    }
+    pub fn get_room_by_name(&self, name: &str) -> Option<RoomId> {
+        self.rooms.get_index_of(name).map(RoomId)
+    }
     /// The start time of the first event, in the event-local time zone
     pub fn start(&self) -> DateTime<TzOrOffset> { self.start }
     /// The end time of the last event, in the event-local time zone
     pub fn end(&self) -> DateTime<TzOrOffset> { self.end }
+    /// The first day of the event
+    pub fn first_day(&self) -> NaiveDate { self.start.date_naive() }
     /// The last day of the event (checks for midnight)
     pub fn last_day(&self) -> NaiveDate { self.last_day }
     /// A more efficiently way than `self.days.len()` to check if there is only a single day in the event
@@ -406,6 +436,11 @@ impl EventIndex {
         // Has to be a u32 exclusive range so that we get a free exact size iterator impl
         (0u32..n_days_minus_1 as u32 + 1)
         .map(move |i| first + TimeDelta::days(i as i64))
+    }
+
+    /// Reasonably efficiently filter sessions by track/room/time or some combination thereof
+    pub fn filter<'a>(&'a self) -> Filtered<'a, ()> {
+        Filtered { event: self, id_range: 0..self.sessions.len(), session_ids: () }
     }
 
     pub fn new(event: Event) -> Self {
@@ -478,48 +513,174 @@ impl PartialEq for EventIndex {
         self.tracks.iter().zip(&other.tracks).all(|(a, b)| {
             a.1.info == b.1.info &&
             a.1.sessions.iter().zip(&b.1.sessions)
-                .all(|(our_session, their_session)| self.session(*our_session) == self.session(*their_session))
+            .all(|(our_session, their_session)| self.session(*our_session) == self.session(*their_session))
         })
     }
 }
 impl Eq for EventIndex {}
 
 impl Index<TrackId> for EventIndex {
-    type Output = TrackInfo;
+    type Output = TrackIndex;
 
     fn index(&self, index: TrackId) -> &Self::Output {
         // This index must be valid unless it came from another event
-        &self.tracks[index.0].info
+        &self.tracks[index.0]
     }
 }
 impl Index<RoomId> for EventIndex {
-    type Output = RoomInfo;
+    type Output = RoomIndex;
 
     fn index(&self, index: RoomId) -> &Self::Output {
         // This index must be valid unless it came from another event
-        &self.rooms[index.0].info
+        &self.rooms[index.0]
     }
 }
+
+pub struct Filtered<'a, Inner> {
+    pub event: &'a EventIndex,
+    id_range: Range<usize>,
+    session_ids: Inner
+}
+impl<'a, Inner> Filtered<'a, Inner> {
+    pub fn start_time<Tz: TimeZone>(self, time_range: impl RangeBounds<DateTime<Tz>>) -> Self {
+        // TODO: don't actually need SortedSessionIdContainer any more!
+        // A bsearch on all sessions is not really much slower than just the track/room we want!
+        let ranged_sessions = &self.event.sessions[self.id_range.start..self.id_range.end];
+        let start_offset =
+            match time_range.start_bound() {
+                std::ops::Bound::Included(start) => {
+                   ranged_sessions.partition_point(|i| i.start_utc < *start)
+                },
+                std::ops::Bound::Excluded(start) => {
+                    ranged_sessions.partition_point(|i| i.start_utc < *start)
+                },
+                std::ops::Bound::Unbounded => 0,
+            };
+        // We can further shrink the range, as the end is after the start (hopefully!)
+        let new_len =
+            match time_range.end_bound() {
+                std::ops::Bound::Included(end) => {
+                    ranged_sessions[start_offset..].partition_point(|i| i.start_utc <= *end)
+                },
+                std::ops::Bound::Excluded(end) => {
+                    ranged_sessions[start_offset..].partition_point(|i| i.start_utc < *end)
+                },
+                std::ops::Bound::Unbounded => self.id_range.end,
+            };
+        Self {
+            id_range: self.id_range.start + start_offset .. self.id_range.start + start_offset + new_len,
+            .. self
+        }
+    }
+
+    /// 0-indexed day of the event
+    pub fn start_day(self, day: u64) -> Self {
+        let first = self.event.first_day().checked_add_days(Days::new(day)).expect("Day overflow");
+        let last = self.event.first_day().checked_add_days(Days::new(day + 1)).expect("Day overflow");
+        self.start_date(first..last)
+    }
+    pub fn start_date(self, date: impl RangeBounds<NaiveDate>) -> Self {
+        let tz = self.event.time_zone;
+        let start = date.start_bound().map(|i| i.and_time(NaiveTime::MIN).and_local_timezone(tz).earliest().expect("Could not resolve start time to event-local timezone").to_utc());
+        let end = date.end_bound().map(|i| i.and_time(NaiveTime::MIN).and_local_timezone(tz).earliest().expect("Could not resolve start time to event-local timezone").to_utc());
+        self.start_time((start, end))
+    }
+
+}
+
+// We can only efficiently filter for one of tracks or rooms
+impl<'a> Filtered<'a, ()> {
+    /// Returns the sessions in SessionId and time sorted order
+    pub fn sessions(&self) -> impl ExactSizeIterator<Item = IndexedSession<'a>> + DoubleEndedIterator {
+        self.id_range.clone().into_iter().map(|i| self.event.session(SessionId(i)))
+    }
+
+    pub fn track(self, id: TrackId) -> Filtered<'a, &'a [SessionId]> {
+        Filtered { event: self.event, id_range: self.id_range, session_ids: &self.event[id].sessions }
+    }
+    pub fn track_name(self, name: &str) -> Filtered<'a, &'a [SessionId]> {
+        let id = self.event.get_track_by_name(name).expect("Track name not found");
+        self.track(id)
+    }
+
+    pub fn room(self, id: RoomId) -> Filtered<'a, &'a [SessionId]> {
+        Filtered { event: self.event, id_range: self.id_range, session_ids: &self.event[id].sessions }
+    }
+    pub fn room_name(self, name: &str) -> Filtered<'a, &'a [SessionId]> {
+        let id = self.event.get_room_by_name(name).expect("Room name not found");
+        self.room(id)
+    }
+}
+impl<'a> Filtered<'a, &'a[SessionId]> {
+    /// Returns the sessions in SessionId and time sorted order
+    pub fn sessions(&self) -> impl ExactSizeIterator<Item = IndexedSession<'a>> + DoubleEndedIterator {
+        let start = self.session_ids.partition_point(|i| i.0 < self.id_range.start);
+        // TODO: we could drop exact size iterator here if we cared enough,
+        // but when you consider extra allocations and whatnot, we (I) don't
+        let len = self.session_ids[start..].partition_point(|i| i.0 < self.id_range.end);
+        self.session_ids[start..start + len].iter().map(|id| self.event.session(*id))
+    }
+}
+
 
 // FIXME: add tests
 #[cfg(test)]
 pub mod test {
-    use crate::inputs::{EventParser, pretalx::Pretalx};
+    use itertools::Itertools;
 
+use crate::inputs::{EventParser, pretalx::Pretalx};
     use super::*;
     // This is the test case that we're going to run non-parsers against. We should probably add more later...
     //
     // It has multiple tracks and multiple days, so should be enough to mess something up if you weren't careful
     //
     // Also, this means that all formatter tests will fail if the pretalx formatter dies, which isn't great
-    pub fn load_bristol() -> Event {
+    pub fn load_bristol() -> EventIndex {
         Pretalx.parse_from_str(include_str!("../test-data/pretalx/bristol-2026.json"))
             .expect("THIS IS A DIFFERENT ISSUE! Sessionize parser is buggy")
+            .finish()
     }
 
     #[test]
     fn test_index() {
-        insta::assert_yaml_snapshot!(load_bristol().finish())
+        insta::assert_yaml_snapshot!(load_bristol())
+    }
+
+    #[test]
+    fn test_time_track_filter() {
+        use crate::tz::Rfc9557DateTime;
+        let bristol = load_bristol();
+        let first_time: Rfc9557DateTime = "2026-08-21T10:00:00+01:00".parse().expect("Could not parse first time");
+        let last_time: Rfc9557DateTime = "2026-08-21T12:00:00+01:00".parse().expect("Could not parse last time");
+        let res =
+            bristol.filter()
+            .start_time(DateTime::from(first_time)..DateTime::from(last_time))
+            .track_name("Track 1")
+            .sessions()
+            .collect_vec();
+        println!("Sessions: {res:#?}");
+        assert_eq!(res.len(), 2, "Filtered sessions had wrong length");
+        assert!(res[0].title.starts_with("Fake It Till You Detect It:"), "First session incorrect");
+        assert!(res[1].title.starts_with("The Next Internal Network:"), "Second session incorrect");
+    }
+
+    #[test]
+    fn test_double_time_track_filter() {
+        use crate::tz::Rfc9557DateTime;
+        let bristol = load_bristol();
+        let first_time: Rfc9557DateTime = "2026-08-21T10:00:00+01:00".parse().expect("Could not parse first time");
+        let last_time: Rfc9557DateTime = "2026-08-21T12:00:00+01:00".parse().expect("Could not parse last time");
+        let new_last_time: Rfc9557DateTime = "2026-08-21T11:00:00+01:00".parse().expect("Could not parse last time");
+        let res =
+            bristol.filter()
+            .start_time(DateTime::from(first_time)..DateTime::from(last_time))
+            .track_name("Track 1")
+            .start_time(DateTime::from(first_time)..DateTime::from(new_last_time))
+            .sessions()
+            .collect_vec();
+        println!("Sessions: {res:#?}");
+        assert_eq!(res.len(), 1, "Filtered sessions had wrong length");
+        assert!(res[0].title.starts_with("Fake It Till You Detect It:"), "First session incorrect");
     }
 
     #[test]
@@ -531,6 +692,7 @@ pub mod test {
         assert_eq!(expected.as_slice(), res, "IntoIter impl wonky");
     }
 
+    // This broke once, so regression test!
     #[test]
     fn test_single_track_loop() {
         let expected = [0];

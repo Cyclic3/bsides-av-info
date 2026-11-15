@@ -131,7 +131,7 @@ impl From<chrono::Utc> for TzOrOffset {
 }
 
 #[repr(transparent)]
-#[derive(PartialEq, Eq, PartialOrd, Ord, SerializeDisplay, DeserializeFromStr, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, SerializeDisplay, DeserializeFromStr, Debug)]
 pub struct Rfc9557DateTime<Base: Borrow<DateTime<TzOrOffset>> = DateTime<TzOrOffset>>(Base);
 impl<Base: Borrow<DateTime<TzOrOffset>>> Display for Rfc9557DateTime<Base> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

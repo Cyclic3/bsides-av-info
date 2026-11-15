@@ -44,7 +44,8 @@ pub trait EventFormatter: Debug {
 pub fn default_formatters() -> Vec<Box<dyn EventFormatter>> {
     vec![
         Box::new(show_file::ShowFile),
-        Box::new(wordlist::WordList::with_system_dicts())
+        Box::new(wordlist::WordList::with_system_dicts()),
+        // Box::new(ontime::Ontime)
     ]
 }
 

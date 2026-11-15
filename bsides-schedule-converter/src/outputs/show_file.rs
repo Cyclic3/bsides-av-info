@@ -1,5 +1,4 @@
 use color_eyre::Result;
-use itertools::Itertools;
 use std::{fmt::Write as FmtWrite, io::Write, path::Path};
 
 use crate::outputs::{EventFormatter, FileTracker};
@@ -12,7 +11,7 @@ pub struct ShowFile;
 impl EventFormatter for ShowFile {
     fn format(&self, event: &crate::event::EventIndex, output_path: &Path) -> Result<()> {
         let mut files = FileTracker::new(output_path.to_owned());
-        for (session_id, talk) in event.sessions() {
+        for talk in event.sessions() {
             let mut data = String::new();
             let start = talk.start();
             // TODO: no way do we end up straddling midnight?
@@ -33,13 +32,8 @@ impl EventFormatter for ShowFile {
             }
             writeln!(&mut data)?;
 
-            let a = talk.maybe_day_track_name().collect_vec();
-            if a.is_empty() {
-                panic!("{session_id:?}: {talk:?}")
-            }
-
             for name in talk.maybe_day_track_name() {
-                println!("{session_id:?}: ({}, {}) -> {name}", talk.day()+1, talk.tracks.iter().map(|i| &event[i].name).join(", "));
+                // println!("{:?}: ({}, {}) -> {name}", talk.id(), talk.day()+1, talk.tracks.iter().map(|i| &event[i].name).join(", "));
                 write!(files.open(name.to_string())?, "{}", data)?;
             }
         }
@@ -75,6 +69,6 @@ mod test {
 
     #[test]
     fn test_show_file() {
-        test_formatter(&ShowFile, load_bristol().finish(), &test_data_path!("show-file"));
+        test_formatter(&ShowFile, load_bristol(), &test_data_path!("show-file"));
     }
 }

@@ -31,7 +31,7 @@ impl WordList {
         let mut speakers = BTreeSet::new();
         let mut words = BTreeSet::new();
 
-        for (_, session) in event.sessions() {
+        for session in event.sessions() {
             titles.insert(session.title.as_ref());
             speakers.extend(session.speakers.iter().map(String::as_str));
 
@@ -85,6 +85,6 @@ mod test {
         // FIXME: actually add a test dictionary so that the output is stable and useful
         //
         // test_formatter(&WordList::new(test_dict), load_bristol().finish(), test_data_path!("wordlist/bristol-2026/"));
-        WordList::new(Default::default()).build_with(&load_bristol().finish()).unwrap();
+        WordList::new(Default::default()).build_with(&load_bristol()).unwrap();
     }
 }
