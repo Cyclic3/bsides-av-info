@@ -5,7 +5,7 @@ use color_eyre::Result;
 use crate::event::Event;
 
 // pub mod ical;
-// pub mod ontime;
+pub mod ontime;
 pub mod show_file;
 pub mod wordlist;
 

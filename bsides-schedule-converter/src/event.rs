@@ -564,6 +564,7 @@ impl<'a> FromIterator<IndexedSession<'a>> for Event {
     }
 }
 
+#[derive(Clone)]
 pub struct Filtered<'a, Inner> {
     pub event: &'a Event,
     id_range: Range<usize>,
@@ -619,7 +620,7 @@ impl<Inner> Filtered<'_, Inner> {
 // We can only efficiently filter for one of tracks or rooms
 impl<'a> Filtered<'a, ()> {
     /// Returns the sessions in `[SessionId]` and time sorted order
-    pub fn sessions(&self) -> impl ExactSizeIterator<Item = IndexedSession<'a>> + DoubleEndedIterator {
+    pub fn sessions(self) -> impl ExactSizeIterator<Item = IndexedSession<'a>> + DoubleEndedIterator {
         self.id_range.clone().into_iter().map(|i| self.event.session(SessionId(i)))
     }
 
@@ -639,9 +640,9 @@ impl<'a> Filtered<'a, ()> {
         self.room(id)
     }
 }
-impl<'a> Filtered<'a, &'a[SessionId]> {
+impl<'a> Filtered<'a, &'a [SessionId]> {
     /// Returns the sessions in `[SessionId]` and time sorted order
-    pub fn sessions(&self) -> impl ExactSizeIterator<Item = IndexedSession<'a>> + DoubleEndedIterator {
+    pub fn sessions(self) -> impl ExactSizeIterator<Item = IndexedSession<'a>> + DoubleEndedIterator {
         let start = self.session_ids.partition_point(|i| i.0 < self.id_range.start);
         // TODO: we could drop exact size iterator here if we cared enough,
         // but when you consider extra allocations and whatnot, we (I) don't
@@ -649,7 +650,6 @@ impl<'a> Filtered<'a, &'a[SessionId]> {
         self.session_ids[start..start + len].iter().map(|id| self.event.session(*id))
     }
 }
-
 
 // FIXME: add tests
 #[cfg(test)]
