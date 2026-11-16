@@ -1,24 +1,26 @@
 use color_eyre::Result;
-use std::{fmt::Write as FmtWrite, io::Write, path::Path};
+use std::{fmt::{Display, Write as FmtWrite}, path::Path};
 
-use crate::{event::IndexedSession, outputs::{EventFormatter, FileTracker}};
+use crate::{event::IndexedSession, outputs::EventFormatter};
 
 /// TODO: actually do this intelligently
 const TITLE_WRAP: usize = 35;
 
 #[derive(Debug)]
 pub struct ShowFile;
+impl Display for ShowFile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Show File")
+    }
+}
 impl EventFormatter for ShowFile {
     fn format(&self, event: &crate::event::Event, output_path: &Path) -> Result<()> {
-        let mut files = FileTracker::new(output_path.to_owned());
-        for talk in event.sessions() {
+        for (name, sessions) in super::standard_grouping(event) {
             let mut data = String::new();
-            format_talk(&mut data, talk)?;
-
-            for name in talk.maybe_day_track_name() {
-                // println!("{:?}: ({}, {}) -> {name}", talk.id(), talk.day()+1, talk.tracks.iter().map(|i| &event[i].name).join(", "));
-                write!(files.open(name.clone())?, "{data}")?;
+            for talk in sessions {
+                format_talk(&mut data, talk)?;
             }
+            std::fs::write(output_path.join(name), data.as_bytes())?;
         }
         Ok(())
     }
@@ -74,7 +76,7 @@ mod test {
 
     #[test]
     fn test_bristol() {
-        test_formatter(&ShowFile, &load_bristol(), &test_data_path!("show-file"));
+        test_formatter(&ShowFile, &load_bristol(), &test_data_path!("show-file"), |_| true);
     }
 
 

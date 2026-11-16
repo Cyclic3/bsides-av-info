@@ -33,7 +33,7 @@ fn main_inner(args: Args) -> Result<()> {
     for formatter in default_formatters() {
         // If a formatter fails, we can keep going
         if let Err(e) = formatter.format(&event, &args.output_dir) {
-            println!("{formatter:?} failed: {e}");
+            println!("{formatter} failed: {e}");
         }
     }
     Ok(())

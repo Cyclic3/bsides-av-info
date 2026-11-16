@@ -5,7 +5,7 @@
 //! present in `/usr/share/dict/words` to select the likely technical terms.
 
 use color_eyre::Result;
-use std::{collections::{BTreeSet, HashSet}, io::{BufRead, BufReader, Write}};
+use std::{collections::{BTreeSet, HashSet}, fmt::Display, io::{BufRead, BufReader, Write}};
 
 use crate::outputs::{EventFormatter, FileTracker};
 
@@ -13,6 +13,11 @@ use crate::outputs::{EventFormatter, FileTracker};
 #[derive(Debug, Default)]
 pub struct WordList {
     dict: HashSet<String>
+}
+impl Display for WordList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Word List")
+    }
 }
 impl WordList {
     #[allow(dead_code, reason="This constructor may be useful one day")]

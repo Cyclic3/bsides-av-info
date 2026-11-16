@@ -1,6 +1,6 @@
 use std::{fmt::Display, io::Read};
 
-use color_eyre::{Result, eyre::{OptionExt, eyre}};
+use color_eyre::{Result, eyre::eyre};
 use regex::Regex;
 
 pub mod pretalx;

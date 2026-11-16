@@ -2,9 +2,9 @@ use chrono::{NaiveTime, TimeDelta};
 use color_eyre::Result;
 use rust_xlsxwriter::Workbook;
 use serde::{Deserialize, Serialize};
-use std::io::Write;
+use std::{fmt::Display, io::Write};
 
-use crate::event::IndexedSession;
+use crate::{event::IndexedSession, outputs::EventFormatter};
 
 /*
 Start 	Excel time | string 	00:00:00
@@ -30,6 +30,24 @@ const TIME_WARN: TimeDelta = TimeDelta::minutes(5);
 const TIME_DANGER: TimeDelta = TimeDelta::minutes(1);
 // Time just before midnight for generating end-of-day cues
 const MIDNIGHT: NaiveTime = NaiveTime::from_hms_opt(23, 59, 59).unwrap();
+
+pub struct Ontime;
+impl Display for Ontime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Ontime")
+    }
+}
+impl EventFormatter for Ontime {
+    fn format(&self, event: &crate::event::Event, output_dir: &std::path::Path) -> Result<()> {
+        for (name, sessions) in super::standard_grouping(event) {
+            let csv_file = std::fs::File::create(output_dir.join(format!("{name}-ontime.csv")))?;
+            // Adding here consumes name, which mayyy be faster (but is very unlikely to be slower)
+            let xlsx_file = std::fs::File::create(output_dir.join(name + "-ontime.xlsx"))?;
+            make_ontime_export(csv_file,  xlsx_file, sessions)?;
+        }
+        Ok(())
+    }
+}
 
 pub fn make_ontime_export<'a, W: Write + Send>(
     csv_writer: W,
@@ -61,19 +79,16 @@ pub fn make_ontime_export<'a, W: Write + Send>(
         worksheet.serialize(&data)?;
 
         let intermission_start = talk1.end().time();
-        let intermission_end;
-        let intermission_title;
-        if let Some(talk2) = talk2 {
-            if talk1.end_utc == talk2.start_utc {
-                continue;
-            }
-            intermission_end = talk2.start().time();
-            intermission_title = "Intermission".into();
-        } else {
-            // make an end of day
-            intermission_end = MIDNIGHT;
-            intermission_title = "End of day".into();
-        };
+        let (intermission_title, intermission_end) =
+            if let Some(talk2) = talk2 {
+                if talk1.end_utc == talk2.start_utc {
+                    continue;
+                }
+                ("Intermission".into(),  talk2.start().time())
+            } else {
+                // make an end of day
+                ("End of day".into(), MIDNIGHT)
+            };
 
         let data = OntimeExport::intermission(intermission_start, intermission_end, intermission_title, &mut cue_number);
         csv_writer.serialize(&data)?;
@@ -119,11 +134,11 @@ enum SessionType {
 
 impl SessionType {
     // link_start is TRUE for TALK sessions
-    const fn link_start(&self) -> bool {
+    const fn link_start(self) -> bool {
         matches!(self, Self::Talk)
     }
 
-    fn colour(&self) -> String {
+    fn colour(self) -> String {
         match self {
             Self::Talk => TALK_COLOUR.into(),
             Self::Break => BREAK_COLOUR.into(),
@@ -131,12 +146,12 @@ impl SessionType {
     }
 
     // count_to_end is FALSE for TALK sessions
-    const fn count_to_end(&self) -> bool {
+    const fn count_to_end(self) -> bool {
         matches!(self, Self::Break)
     }
 
     // time_ty is CountDown for talks and Clock for breaks
-    fn time_ty(&self) -> TimerType {
+    const fn time_ty(self) -> TimerType {
         match self {
             Self::Talk => TimerType::CountDown,
             Self::Break => TimerType::Clock,
@@ -211,9 +226,9 @@ pub enum TimerType {
 
 #[cfg(test)]
 mod test {
-    use crate::event::test::load_bristol;
     use super::*;
-    use std::io::Cursor;
+    use crate::{event::test::load_bristol, outputs::test::test_formatter, test_data_path};
+    use std::{ffi::OsStr, io::Cursor};
 
     #[test]
     fn test_duration_fmt() {
@@ -266,6 +281,12 @@ mod test {
 17:20:00,false,23:59:59,06:39:59,15,End of day,false,yellow,none,clock,true,00:05:00,00:01:00
 "#,
         );
+    }
+
+    #[test]
+    fn test_bristol() {
+        // FIXME: xlsx files do not seem to be fully stable, so we can't compare ;-;
+        test_formatter(&Ontime, &load_bristol(), &test_data_path!("ontime"), |p| p.extension() != Some(OsStr::new("xlsx")));
     }
 
     // TODO: actually implement this

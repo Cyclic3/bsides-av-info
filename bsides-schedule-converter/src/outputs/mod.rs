@@ -1,13 +1,47 @@
-use std::{collections::BTreeMap, fmt::Debug, fs::File, io::{BufWriter, Write}, path::PathBuf};
+use std::{collections::BTreeMap, fmt::Display, fs::File, io::{BufWriter, Write}, path::PathBuf};
 
 use color_eyre::Result;
+use itertools::Itertools;
 
-use crate::event::Event;
+use crate::event::{Event, IndexedSession};
 
 // pub mod ical;
 pub mod ontime;
 pub mod show_file;
 pub mod wordlist;
+
+/// Gets the standard names and grouping for events
+///
+/// In particular, the sessions are grouped by the key `day{day + 1}-{track_name}`, skipping the day name if there is only one day
+pub fn standard_grouping(event: &Event) -> impl Iterator<Item=(String, impl ExactSizeIterator<Item=IndexedSession<'_>>)> {
+    // TODO: the nested Either does not feel necessary here, but otherwise the types get sad because of the impl.
+    if event.single_day() {
+        either::Left(event.tracks().filter(|(_, track)| !track.sessions.is_empty()).map(|(_, track)| (
+            track.name.clone(),
+            either::Left(track.sessions.iter().map(|i| event.session(*i)))
+        )))
+        // if event.tracks().len() == 1 {
+        //     either::Left(either::Left(std::iter::once(String::default())))
+        // }
+        // else {
+        //     either::Left(either::Right(self.tracks.iter().map(move |track_id| self.event()[track_id].info.name.clone())))
+        // }
+    }
+    else {
+        either::Right(
+            (0..event.days().len())
+            .cartesian_product(event.tracks())
+            .filter_map(|(day_no, (track_id, track))| {
+                let filtered = event.filter().track(track_id).start_day(day_no as u64).sessions();
+                if filtered.len() == 0 {
+                    None
+                }
+                else {
+                    Some((format!("day{}-{}", day_no + 1, track.name), either::Right(filtered)))
+                }
+            }))
+    }
+}
 
 /// Enables a slightly less slow version of opening and appending each time
 ///
@@ -37,7 +71,7 @@ impl FileTracker {
     }
 }
 
-pub trait EventFormatter: Debug {
+pub trait EventFormatter: Display {
     fn format(&self, event: &Event, output_dir: &std::path::Path) -> Result<()>;
 }
 
@@ -45,7 +79,7 @@ pub fn default_formatters() -> Vec<Box<dyn EventFormatter>> {
     vec![
         Box::new(show_file::ShowFile),
         Box::new(wordlist::WordList::with_system_dicts()),
-        // Box::new(ontime::Ontime),
+        Box::new(ontime::Ontime),
     ]
 }
 
@@ -76,7 +110,7 @@ mod test {
     //
     // We could do this a lot more efficiently (two passes with ordered iterators),
     // but this is easier to check that I haven't made a mistake :p
-    fn assert_same_files(output_dir: &Path, compare_dir: &Path) {
+    fn assert_same_files(output_dir: &Path, compare_dir: &Path, filter: impl Fn(&Path) -> bool) {
         // Get a big list of each collection of files, because that makes formatting wayyyy easier
         let generated_files: BTreeMap<PathBuf, PathBuf> =
             get_files(output_dir).expect("Failed to enumerate generated files").into_sorted_vec().into_iter()
@@ -106,6 +140,10 @@ mod test {
                 println!("{file:?} was not supposed to have been generated");
             }
             // For nicer formatting, see if we can make them strings
+            if !filter(file) {
+                println!("Skipping filtered {file:?}.");
+                continue;
+            }
             if
                 let Ok(generated_file) = generated_file.as_ref().map_or(Ok(""), |i| std::str::from_utf8(i)) &&
                 let Ok(expected_file) = expected_file.as_ref().map_or(Ok(""), |i| std::str::from_utf8(i))
@@ -123,7 +161,7 @@ mod test {
         }
     }
     /// Test a formatter against a known output
-    pub fn test_formatter(format: &impl EventFormatter, input: &Event, compare_dir: &(impl AsRef<OsStr> + ?Sized)) {
+    pub fn test_formatter(format: &impl EventFormatter, input: &Event, compare_dir: &(impl AsRef<OsStr> + ?Sized), filter: impl Fn(&Path) -> bool) {
         // I'm making the executive decision that we don't care if somehow something creates empty dirs,
         // and only compare files + paths.
         //
@@ -132,7 +170,7 @@ mod test {
         // Create a scoped handle for somewhere to dump our generated data
         let output_dir = tempfile::tempdir().expect("Could not create temporary directory for testing formatter");
         format.format(input, output_dir.path()).expect("Failed to format input");
-        assert_same_files(output_dir.path(), Path::new(compare_dir));
+        assert_same_files(output_dir.path(), Path::new(compare_dir), filter);
     }
     #[macro_export]
     macro_rules! test_data_path {
@@ -155,6 +193,6 @@ mod test {
         files.pop();
         println!("Comparing source directory {files:?} with iteself");
         // If this somehow damages source files imma be so angry
-        assert_same_files(&files, &files);
+        assert_same_files(&files, &files, |_| true);
     }
 }

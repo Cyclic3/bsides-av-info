@@ -352,25 +352,7 @@ impl<'a> IndexedSession<'a> {
         debug_assert!(ret >= 0, "Got an indexed session before the start of the event");
         ret.cast_unsigned()
     }
-    /// Get a sequence of `day{day + 1}-{track_name}` that this session is in, skipping empty components
-    pub fn maybe_day_track_name(&self) -> impl ExactSizeIterator<Item=String> {
-        if self.event().single_day() {
-            if self.event().tracks().len() == 1 {
-                either::Left(either::Left(std::iter::once(String::default())))
-            }
-            else {
-                either::Left(either::Right(self.tracks.iter().map(move |track_id| self.event()[track_id].info.name.clone())))
-            }
-        }
-        else {
-            if self.event().tracks().len() == 1 {
-                either::Right(either::Left(std::iter::once(format!("day{}", self.day() + 1))))
-            }
-            else {
-                either::Right(either::Right(self.tracks.iter().map(|track_id| format!("day{}-{}", self.day() + 1, self.event()[track_id].info.name))))
-            }
-        }
-    }
+
 }
 impl Debug for IndexedSession<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -428,15 +410,15 @@ impl Event {
         IndexedSession { event: self, session: &self.sessions[id.0], id }
     }
     /// Return the sessions by id
-    pub fn sessions(&self) -> impl ExactSizeIterator<Item = IndexedSession<'_>> + DoubleEndedIterator {
+    pub fn sessions(&self) -> impl ExactSizeIterator<Item = IndexedSession<'_>> + DoubleEndedIterator + Clone {
         self.sessions.iter().enumerate().map(|(id, session)| IndexedSession { id: SessionId(id), event: self, session })
     }
     /// Returns the tracks in `[TrackId]` sorted order
-    pub fn tracks(&self) -> impl ExactSizeIterator<Item=(TrackId, &TrackIndex)> + DoubleEndedIterator {
+    pub fn tracks(&self) -> impl ExactSizeIterator<Item=(TrackId, &TrackIndex)> + DoubleEndedIterator + Clone {
         self.tracks.iter().enumerate().map(|(idx, (_, i))| (TrackId(idx), i))
     }
     /// Returns the tracks in `[RoomId]` sorted order
-    pub fn rooms(&self) -> impl ExactSizeIterator<Item=(RoomId, &RoomIndex)> + DoubleEndedIterator {
+    pub fn rooms(&self) -> impl ExactSizeIterator<Item=(RoomId, &RoomIndex)> + DoubleEndedIterator + Clone {
         self.rooms.iter().enumerate().map(|(idx, (_, i))| (RoomId(idx), i))
     }
     pub fn get_track_by_name(&self, name: &str) -> Option<TrackId> {
