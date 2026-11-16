@@ -6,7 +6,7 @@ use regex::regex;
 use scraper::{ElementRef, Html, Selector};
 use std::{fmt::Display, str::FromStr, sync::OnceLock};
 
-use crate::{event::{Event, EventBuilder, Session, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
+use crate::{event::{Event, EventBuilder, RoomInfo, Session, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
 
 static CARD_SELECTOR: OnceLock<Selector> = OnceLock::new();
 static ROOM_SELECTOR: OnceLock<Selector> = OnceLock::new();
@@ -83,7 +83,9 @@ fn parse_card(event: &mut EventBuilder, card: &ElementRef<'_>) -> Result<Session
         .get_or_init(|| Selector::parse("ul.sz-session__speakers").unwrap());
 
     // The track is stored in the room
-    let track = event.get_or_create_track(select_str(card, room_selector, "room")?, |name| TrackInfo{name: name.to_owned()});
+    let room_name = select_str(card, room_selector, "room")?;
+    let track = event.get_or_create_track(room_name, |name| TrackInfo{name: name.to_owned()});
+    let room = event.get_or_create_room(room_name, |name| RoomInfo{name: name.to_owned()});
 
     let time =
         card.select(time_selector)
@@ -110,7 +112,7 @@ fn parse_card(event: &mut EventBuilder, card: &ElementRef<'_>) -> Result<Session
         title,
         description,
         speakers,
-        room: None,
+        room: Some(room),
         start_utc: start,
         end_utc: end,
         tracks: TrackSet::from_iter([track])

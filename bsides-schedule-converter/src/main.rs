@@ -35,6 +35,9 @@ fn main_inner(args: Args) -> Result<()> {
         if let Err(e) = formatter.format(&event, &args.output_dir) {
             println!("{formatter} failed: {e}");
         }
+        else {
+            println!("Generated {formatter}");
+        }
     }
     Ok(())
 }

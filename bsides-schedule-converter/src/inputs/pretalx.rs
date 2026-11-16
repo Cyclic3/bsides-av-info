@@ -5,7 +5,7 @@ use color_eyre::{Result, eyre::OptionExt};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
-use crate::{event::{Event, EventBuilder, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
+use crate::{event::{Event, EventBuilder, RoomInfo, TrackInfo, TrackSet}, inputs::EventParser, tz::TzOrOffset};
 
 pub struct Pretalx;
 impl Display for Pretalx {
@@ -22,6 +22,7 @@ impl EventParser for Pretalx {
         // Pump it
         let mut ret = EventBuilder::new();
         for track in &conference.tracks {
+            let room_id = ret.get_or_create_room(&track.name, |name| RoomInfo { name: name.clone() });
             let track_id = ret.get_or_create_track(&track.name, |name| TrackInfo { name: name.clone() });
             for day in &mut conference.days {
                 let Some(cur_track) = day.rooms.swap_remove(&track.name)
@@ -72,7 +73,7 @@ impl EventParser for Pretalx {
                     ret.add_session(crate::event::Session {
                         title: talk.title,
                         description: talk.r#abstract,
-                        room: None,
+                        room: Some(room_id),
                         speakers,
                         start_utc: start,
                         end_utc: start + duration,

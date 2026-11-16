@@ -5,7 +5,7 @@ use color_eyre::{Result, eyre::{OptionExt, eyre}};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-use crate::{event::{EventBuilder, TrackInfo}, inputs::EventParser, tz::TzOrOffset};
+use crate::{event::{EventBuilder, RoomInfo, TrackInfo}, inputs::EventParser, tz::TzOrOffset};
 
 pub struct SessionizeJson;
 impl Display for SessionizeJson {
@@ -23,7 +23,7 @@ impl EventParser for SessionizeJson {
         let mut track_lookup = BTreeMap::new();
 
         for room in obj.rooms {
-            track_lookup.insert(room.id, event.create_track(TrackInfo{name: room.name}));
+            track_lookup.insert(room.id, (event.create_track(TrackInfo{name: room.name.clone()}), event.create_room(RoomInfo{name: room.name})));
         }
         let mut speaker_lookup = BTreeMap::new();
         for speaker in obj.speakers {
@@ -31,13 +31,13 @@ impl EventParser for SessionizeJson {
         }
 
         for session in obj.sessions {
-            let track =
+            let (track, room) =
                 // Opening remarks and such like
                 if session.is_service_session {
-                    event.get_or_create_track("Service Session", |_| TrackInfo { name: "Service Session".into() })
+                    (event.get_or_create_track("Service Session", |_| TrackInfo { name: "Service Session".into() }), None)
                 }
-                else if let Some(track) = track_lookup.get(&session.room_id).copied() {
-                    track
+                else if let Some((track_id, room_id)) = track_lookup.get(&session.room_id).copied() {
+                    (track_id, Some(room_id))
                 }
                 else {
                     return Err(eyre!("Invalid room id"));
@@ -50,7 +50,7 @@ impl EventParser for SessionizeJson {
                 start_utc: session.starts_at,
                 end_utc: session.ends_at,
                 tracks: std::iter::once(track).collect(),
-                room: None,
+                room
             });
         }
 

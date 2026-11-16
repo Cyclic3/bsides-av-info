@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::event::{Event, IndexedSession};
 
-// pub mod ical;
+pub mod ical;
 pub mod ontime;
 pub mod show_file;
 pub mod wordlist;
@@ -80,6 +80,7 @@ pub fn default_formatters() -> Vec<Box<dyn EventFormatter>> {
         Box::new(show_file::ShowFile),
         Box::new(wordlist::WordList::with_system_dicts()),
         Box::new(ontime::Ontime),
+        Box::new(ical::ICal)
     ]
 }
 
