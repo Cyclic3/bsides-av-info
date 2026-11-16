@@ -21,7 +21,7 @@ impl FileTracker {
     pub fn new(output_dir: PathBuf) -> Self {
         Self {
             output_dir,
-            file_cache: Default::default()
+            file_cache: BTreeMap::default()
         }
     }
     pub fn open(&mut self, name: impl AsRef<str> + Into<String>) -> Result<&mut File> {
@@ -59,16 +59,15 @@ mod test {
 
     /// Get files in a directory and return them in lexicographical order
     ///
-    /// Because of https://github.com/rust-lang/rust/issues/59278, we can't use the more sane choice of a binary heap
+    /// Because of <https://github.com/rust-lang/rust/issues/59278>, we can't use the more sane choice of a binary heap
     pub fn get_files(dir: &Path) -> Result<BinaryHeap<PathBuf>> {
         std::fs::read_dir(dir)?
         .map(|dirent| {
             let dirent = dirent?;
-            if !dirent.file_type()?.is_file() {
-                Ok(None)
-            }
-            else {
+            if dirent.file_type()?.is_file() {
                 Ok(Some(dirent.path()))
+            } else {
+                Ok(None)
             }
         })
         .process_results(|i| i.flatten().collect())
@@ -88,8 +87,8 @@ mod test {
             .map(|i|  (i.strip_prefix(compare_dir).unwrap().to_owned(), i))
             .collect();
 
-        println!("Generated:\n{}", generated_files.keys().format_with("\n", |i, f| f(&format_args!("    {:#?}", i))));
-        println!("Expected:\n{}", expected_files.keys().format_with("\n", |i, f| f(&format_args!("    {:#?}", i))));
+        println!("Generated:\n{}", generated_files.keys().format_with("\n", |i, f| f(&format_args!("    {i:#?}"))));
+        println!("Expected:\n{}", expected_files.keys().format_with("\n", |i, f| f(&format_args!("    {i:#?}"))));
 
         // Yes, we could be smarter than this, but that's a lot of effort to save a ~O(n) pass over a small number of small strings
         let files: Vec<&PathBuf> = generated_files.keys().merge(expected_files.keys()).dedup().collect();
@@ -108,8 +107,8 @@ mod test {
             }
             // For nicer formatting, see if we can make them strings
             if
-                let Ok(generated_file) = generated_file.as_ref().map(|i| std::str::from_utf8(i)).unwrap_or(Ok("")) &&
-                let Ok(expected_file) = expected_file.as_ref().map(|i| std::str::from_utf8(i)).unwrap_or(Ok(""))
+                let Ok(generated_file) = generated_file.as_ref().map_or(Ok(""), |i| std::str::from_utf8(i)) &&
+                let Ok(expected_file) = expected_file.as_ref().map_or(Ok(""), |i| std::str::from_utf8(i))
             {
                 assert_eq!(generated_file, expected_file, "The generated {file:?} was different that the expected file");
             }
@@ -117,15 +116,14 @@ mod test {
                 assert_eq!(generated_file, expected_file, "The generated {file:?} was different that the expected file");
             }
             // Make sure that we don't compare empty files as equal to empty strings
-            if generated_file.is_none() != expected_file.is_none()  {
-                // We printed an error message earlier
-                panic!()
-            }
+            //
+            // We printed an error message earlier, so we don't need one here
+            assert_eq!(generated_file.is_none(), expected_file.is_none());
             println!("Generated {file:?} matched.");
         }
     }
     /// Test a formatter against a known output
-    pub fn test_formatter(format: &impl EventFormatter, input: Event, compare_dir: &(impl AsRef<OsStr> + ?Sized)) {
+    pub fn test_formatter(format: &impl EventFormatter, input: &Event, compare_dir: &(impl AsRef<OsStr> + ?Sized)) {
         // I'm making the executive decision that we don't care if somehow something creates empty dirs,
         // and only compare files + paths.
         //
@@ -133,7 +131,7 @@ mod test {
 
         // Create a scoped handle for somewhere to dump our generated data
         let output_dir = tempfile::tempdir().expect("Could not create temporary directory for testing formatter");
-        format.format(&input, output_dir.path()).expect("Failed to format input");
+        format.format(input, output_dir.path()).expect("Failed to format input");
         assert_same_files(output_dir.path(), Path::new(compare_dir));
     }
     #[macro_export]

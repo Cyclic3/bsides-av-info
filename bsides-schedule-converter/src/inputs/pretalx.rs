@@ -36,16 +36,15 @@ impl EventParser for Pretalx {
                     let speakers = talk.persons
                         .into_iter()
                         .map(|person| {
-                            if !person.public_name.is_empty() {
-                                person.public_name
-                            }
-                            else {
+                            if person.public_name.is_empty() {
                                 println!(
                                     "Warning: no public name specified, falling back to \
                                     regular name for `{}`",
                                     person.name,
                                 );
                                 person.name
+                            } else {
+                                person.public_name
                             }
                         })
                         .collect();

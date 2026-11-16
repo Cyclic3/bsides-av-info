@@ -22,7 +22,8 @@ pub struct Args {
 }
 
 // Separated out for easier testing
-pub fn main_inner(args: Args) -> Result<()> {
+#[allow(clippy::needless_pass_by_value, reason="We will never need these arguments again, and I don't want to refactor if we do use a move")]
+fn main_inner(args: Args) -> Result<()> {
     println!("game");
     std::fs::create_dir_all(&args.output_dir)?;
     color_eyre::install()?;

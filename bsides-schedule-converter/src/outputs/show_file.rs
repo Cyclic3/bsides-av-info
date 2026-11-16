@@ -34,7 +34,7 @@ impl EventFormatter for ShowFile {
 
             for name in talk.maybe_day_track_name() {
                 // println!("{:?}: ({}, {}) -> {name}", talk.id(), talk.day()+1, talk.tracks.iter().map(|i| &event[i].name).join(", "));
-                write!(files.open(name.to_string())?, "{}", data)?;
+                write!(files.open(name.clone())?, "{data}")?;
             }
         }
         Ok(())
@@ -69,6 +69,6 @@ mod test {
 
     #[test]
     fn test_show_file() {
-        test_formatter(&ShowFile, load_bristol(), &test_data_path!("show-file"));
+        test_formatter(&ShowFile, &load_bristol(), &test_data_path!("show-file"));
     }
 }

@@ -19,18 +19,23 @@ pub fn fixed_offset_fromstr(s: &str) -> Result<FixedOffset> {
             Some(other) => return Err(eyre!("Invalid UTC offset sign {other:?}")),
             None => return Err(eyre!("Empty timezone string"))
         };
-    // chrono::FixedOffset::from_str doesn't allow UTC+01, it needs minutes for some reason
-    let time: u32 = trimmed[1..].splitn(3, ":")
+    // chrono::FixedOffset::from_str doesn't allow UTC+01, it needs minutes for some reason#
+    #[allow(clippy::cast_possible_truncation, reason="We split into at most 3 components")]
+    let time: u32 = trimmed[1..].splitn(3, ':')
         .map(u32::from_str)
         .process_results(|i|
             i.enumerate()
             .map(|(idx, value)| 60u32.pow(2 - idx as u32) * value)
             .sum()
         )?;
-    chrono::FixedOffset::east_opt(time as i32 * sign)
+
+    // If they specified a 2 billion second offset, then who cares if this goes wonky
+    chrono::FixedOffset::east_opt(time.cast_signed() * sign)
     // .map(Self::FixedOffset)
     .ok_or_else(|| eyre!("Value was neither a valid time zone nor a valid UTC offset"))
 }
+
+const NO_OFFSET: FixedOffset = FixedOffset::east_opt(0).unwrap();
 
 #[derive(Clone, Copy, Debug, SerializeDisplay)]
 pub enum TzOrOffsetOffset {
@@ -39,22 +44,22 @@ pub enum TzOrOffsetOffset {
 }
 impl Default for TzOrOffsetOffset {
     fn default() -> Self {
-        Self::FixedOffset(FixedOffset::east_opt(0).unwrap())
+        Self::FixedOffset(NO_OFFSET)
     }
 }
 impl Offset for TzOrOffsetOffset {
     fn fix(&self) -> FixedOffset {
         match self {
-            TzOrOffsetOffset::TimeZone(tz_offset) => tz_offset.fix(),
-            TzOrOffsetOffset::FixedOffset(fixed_offset) => *fixed_offset,
+            Self::TimeZone(tz_offset) => tz_offset.fix(),
+            Self::FixedOffset(fixed_offset) => *fixed_offset,
         }
     }
 }
 impl Display for TzOrOffsetOffset {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TzOrOffsetOffset::TimeZone(tz_offset) => tz_offset.fmt(f),
-            TzOrOffsetOffset::FixedOffset(fixed_offset) => fixed_offset.fmt(f),
+            Self::TimeZone(tz_offset) => tz_offset.fmt(f),
+            Self::FixedOffset(fixed_offset) => fixed_offset.fmt(f),
         }
     }
 }
@@ -67,7 +72,7 @@ pub enum TzOrOffset {
 }
 impl Default for TzOrOffset {
     fn default() -> Self {
-        Self::FixedOffset(FixedOffset::east_opt(0).unwrap())
+        Self::FixedOffset(NO_OFFSET)
     }
 }
 impl TimeZone for TzOrOffset {
@@ -82,29 +87,29 @@ impl TimeZone for TzOrOffset {
 
     fn offset_from_local_date(&self, local: &chrono::prelude::NaiveDate) -> chrono::MappedLocalTime<Self::Offset> {
         match self {
-            TzOrOffset::TimeZone(tz) => tz.offset_from_local_date(local).map(Self::Offset::TimeZone),
-            TzOrOffset::FixedOffset(fixed_offset) => fixed_offset.offset_from_local_date(local).map(Self::Offset::FixedOffset),
+            Self::TimeZone(tz) => tz.offset_from_local_date(local).map(Self::Offset::TimeZone),
+            Self::FixedOffset(fixed_offset) => fixed_offset.offset_from_local_date(local).map(Self::Offset::FixedOffset),
         }
     }
 
     fn offset_from_local_datetime(&self, local: &NaiveDateTime) -> chrono::MappedLocalTime<Self::Offset> {
         match self {
-            TzOrOffset::TimeZone(tz) => tz.offset_from_local_datetime(local).map(Self::Offset::TimeZone),
-            TzOrOffset::FixedOffset(fixed_offset) => fixed_offset.offset_from_local_datetime(local).map(Self::Offset::FixedOffset),
+            Self::TimeZone(tz) => tz.offset_from_local_datetime(local).map(Self::Offset::TimeZone),
+            Self::FixedOffset(fixed_offset) => fixed_offset.offset_from_local_datetime(local).map(Self::Offset::FixedOffset),
         }
     }
 
     fn offset_from_utc_date(&self, utc: &chrono::prelude::NaiveDate) -> Self::Offset {
         match self {
-            TzOrOffset::TimeZone(tz) => Self::Offset::TimeZone(tz.offset_from_utc_date(utc)),
-            TzOrOffset::FixedOffset(fixed_offset) => Self::Offset::FixedOffset(fixed_offset.offset_from_utc_date(utc)),
+            Self::TimeZone(tz) => Self::Offset::TimeZone(tz.offset_from_utc_date(utc)),
+            Self::FixedOffset(fixed_offset) => Self::Offset::FixedOffset(fixed_offset.offset_from_utc_date(utc)),
         }
     }
 
     fn offset_from_utc_datetime(&self, utc: &NaiveDateTime) -> Self::Offset {
         match self {
-            TzOrOffset::TimeZone(tz) => Self::Offset::TimeZone(tz.offset_from_utc_datetime(utc)),
-            TzOrOffset::FixedOffset(fixed_offset) => Self::Offset::FixedOffset(fixed_offset.offset_from_utc_datetime(utc)),
+            Self::TimeZone(tz) => Self::Offset::TimeZone(tz.offset_from_utc_datetime(utc)),
+            Self::FixedOffset(fixed_offset) => Self::Offset::FixedOffset(fixed_offset.offset_from_utc_datetime(utc)),
         }
     }
 }
@@ -119,14 +124,14 @@ impl FromStr for TzOrOffset {
 impl Display for TzOrOffset {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TzOrOffset::TimeZone(tz) => tz.fmt(f),
-            TzOrOffset::FixedOffset(fixed_offset) => write!(f, "UTC{fixed_offset}"),
+            Self::TimeZone(tz) => tz.fmt(f),
+            Self::FixedOffset(fixed_offset) => write!(f, "UTC{fixed_offset}"),
         }
     }
 }
 impl From<chrono::Utc> for TzOrOffset {
     fn from(_value: chrono::Utc) -> Self {
-        Default::default()
+        Self::default()
     }
 }
 
@@ -172,12 +177,12 @@ impl FromStr for Rfc9557DateTime {
             if *ret.fixed_offset().offset() != tz_fixed_offset {
                 return Err(eyre!("Given offset did not match time zone offset"));
             }
-            Ok(Rfc9557DateTime(ret))
+            Ok(Self(ret))
         }
         else {
             let offset = fixed_offset_fromstr(s)?;
             // FIXME: gracefully handle insane ambiguity here
-            Ok(Rfc9557DateTime(date.and_local_timezone(TzOrOffset::FixedOffset(offset)).unwrap()))
+            Ok(Self(date.and_local_timezone(TzOrOffset::FixedOffset(offset)).unwrap()))
         }
     }
 }
@@ -198,7 +203,7 @@ impl SerializeAs<DateTime<TzOrOffset>> for Rfc9557DateTime {
 }
 impl<'de> DeserializeAs<'de, DateTime<TzOrOffset>> for Rfc9557DateTime {
     fn deserialize_as<D: serde::Deserializer<'de>>(deserializer: D) -> std::prelude::v1::Result<DateTime<TzOrOffset>, D::Error> {
-        Rfc9557DateTime::deserialize(deserializer).map(Into::into)
+        Self::deserialize(deserializer).map(Into::into)
     }
 }
 
@@ -208,7 +213,7 @@ mod test {
 
     #[test]
     fn test_deserialise_tz() {
-        assert_eq!("Europe/London".parse::<TzOrOffset>().expect("Could not parse time zone"), TzOrOffset::TimeZone(Tz::Europe__London))
+        assert_eq!("Europe/London".parse::<TzOrOffset>().expect("Could not parse time zone"), TzOrOffset::TimeZone(Tz::Europe__London));
     }
 
 
@@ -222,12 +227,12 @@ mod test {
 
     #[test]
     fn test_serialise_tz() {
-        assert_eq!(TzOrOffset::TimeZone(Tz::Europe__London).to_string(), "Europe/London")
+        assert_eq!(TzOrOffset::TimeZone(Tz::Europe__London).to_string(), "Europe/London");
     }
 
     #[test]
     fn test_serialise_offset() {
-        assert_eq!(TzOrOffset::FixedOffset(FixedOffset::east_opt(3600).unwrap()).to_string(), "UTC+01:00")
+        assert_eq!(TzOrOffset::FixedOffset(FixedOffset::east_opt(3600).unwrap()).to_string(), "UTC+01:00");
     }
 
 

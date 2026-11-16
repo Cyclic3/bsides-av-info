@@ -4,28 +4,27 @@
 //! list. For the descriptions, pull out capitalised words and words not
 //! present in `/usr/share/dict/words` to select the likely technical terms.
 
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::Result;
 use std::{collections::{BTreeSet, HashSet}, io::{BufRead, BufReader, Write}};
 
 use crate::outputs::{EventFormatter, FileTracker};
 
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct WordList {
     dict: HashSet<String>
 }
 impl WordList {
-    pub fn new(dict: HashSet<String>) -> Self {
-        WordList {
-            dict
-        }
+    #[allow(dead_code, reason="This constructor may be useful one day")]
+    pub const fn new(dict: HashSet<String>) -> Self {
+        Self { dict }
     }
     pub fn with_system_dicts() -> Self {
         Self {
-            dict: load_usr_share_dict_words().map_err(|e| eyre!("Failed to load user dicts. Have you installed wbritish and wamerican?\n{e}")).unwrap()
+            dict: load_usr_share_dict_words().expect("Failed to load user dicts. Have you installed wbritish and wamerican?")
         }
     }
-    fn build_with(&self, event: &crate::event::Event) -> Result<String> {
+    fn build_with(&self, event: &crate::event::Event) -> std::string::String {
         // Talk titles and speakers
         let mut titles = BTreeSet::new();
         let mut speakers = BTreeSet::new();
@@ -39,7 +38,7 @@ impl WordList {
                 // Remove leading and trailing punctuation
                 let word = word.trim_matches(|chr: char| !chr.is_alphanumeric());
                 if word.len() > 2
-                    && (word.chars().all(|chr| chr.is_uppercase())
+                    && (word.chars().all(char::is_uppercase)
                         || !self.dict.contains(&word.to_lowercase()))
                 {
                     words.insert(word);
@@ -48,12 +47,12 @@ impl WordList {
         }
 
         // We want a trailing newline, so we can't use join
-        Ok(titles.into_iter().chain(speakers).chain(words).fold(String::new(), |acc, i| acc + i + "\n"))
+        titles.into_iter().chain(speakers).chain(words).fold(String::new(), |acc, i| acc + i + "\n")
     }
 }
 impl EventFormatter for WordList {
     fn format(&self, event: &crate::event::Event, output_dir: &std::path::Path) -> Result<()> {
-        let ret = self.build_with(event)?;
+        let ret = self.build_with(event);
 
         // Slightly more convenient to use this
         let mut files = FileTracker::new(output_dir.to_owned());
@@ -85,6 +84,6 @@ mod test {
         // FIXME: actually add a test dictionary so that the output is stable and useful
         //
         // test_formatter(&WordList::new(test_dict), load_bristol().finish(), test_data_path!("wordlist/bristol-2026/"));
-        WordList::new(Default::default()).build_with(&load_bristol()).unwrap();
+        WordList::default().build_with(&load_bristol());
     }
 }

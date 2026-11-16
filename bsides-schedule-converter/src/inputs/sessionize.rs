@@ -50,7 +50,7 @@ impl EventParser for Sessionize {
 
         #[expect(clippy::unwrap_used)]
         let card_selector = CARD_SELECTOR
-        .get_or_init(|| Selector::parse(r#"li.sz-session"#).unwrap());
+        .get_or_init(|| Selector::parse("li.sz-session").unwrap());
 
         let mut ret = EventBuilder::new();
         for card in fragment.select(card_selector) {
@@ -67,20 +67,20 @@ impl EventParser for Sessionize {
 fn parse_card(event: &mut EventBuilder, card: &ElementRef<'_>) -> Result<Session> {
     #[expect(clippy::unwrap_used)]
     let room_selector = ROOM_SELECTOR
-        .get_or_init(|| Selector::parse(r#"div.sz-session__room"#).unwrap());
+        .get_or_init(|| Selector::parse("div.sz-session__room").unwrap());
     #[expect(clippy::unwrap_used)]
     let time_selector = TIME_SELECTOR
-        .get_or_init(|| Selector::parse(r#"div.sz-session__time"#).unwrap());
+        .get_or_init(|| Selector::parse("div.sz-session__time").unwrap());
     #[expect(clippy::unwrap_used)]
     let title_selector = TITLE_SELECTOR
-        .get_or_init(|| Selector::parse(r#"h3.sz-session__title"#).unwrap());
+        .get_or_init(|| Selector::parse("h3.sz-session__title").unwrap());
     #[expect(clippy::unwrap_used)]
     let description_selector = DESCRIPTION_SELECTOR.get_or_init(|| {
-        Selector::parse(r#"p.sz-session__description"#).unwrap()
+        Selector::parse("p.sz-session__description").unwrap()
     });
     #[expect(clippy::unwrap_used)]
     let speaker_selector = SPEAKER_SELECTOR
-        .get_or_init(|| Selector::parse(r#"ul.sz-session__speakers"#).unwrap());
+        .get_or_init(|| Selector::parse("ul.sz-session__speakers").unwrap());
 
     // The track is stored in the room
     let track = event.get_or_create_track(select_str(card, room_selector, "room")?, |name| TrackInfo{name: name.to_owned()});

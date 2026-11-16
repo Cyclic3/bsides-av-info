@@ -28,7 +28,7 @@ pub const DEFAULT_PARSERS: &[&dyn EventParser] = &[
 ];
 
 impl Event {
-    pub fn parse_from_str(data: &str, registry: impl IntoIterator<Item=impl AsRef<dyn EventParser>>) -> Option<Event> {
+    pub fn parse_from_str(data: &str, registry: impl IntoIterator<Item=impl AsRef<dyn EventParser>>) -> Option<Self> {
         for i in registry {
             let i = i.as_ref();
             match i.parse_from_str(data) {
@@ -37,13 +37,13 @@ impl Event {
                     return Some(res)
                 }
                 Err(e) => {
-                    println!("Rejected format {i}: {e}")
+                    println!("Rejected format {i}: {e}");
                 }
             }
         }
         None
     }
-    pub fn parse(location: &str, registry: impl IntoIterator<Item=impl AsRef<dyn EventParser>>) -> Result<Event> {
+    pub fn parse(location: &str, registry: impl IntoIterator<Item=impl AsRef<dyn EventParser>>) -> Result<Self> {
         // Work out where to get the data from, and load it
         let url_regex = Regex::new("(?i)(https?|ftp)://").expect("Could not compile http regex");
         let mut data: String;
