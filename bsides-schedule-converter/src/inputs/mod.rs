@@ -1,15 +1,15 @@
 use std::{fmt::Display, io::Read};
 
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{Result, eyre::{OptionExt, eyre}};
 use regex::Regex;
 
 pub mod pretalx;
 pub mod sessionize;
-// pub mod sessionize_json;
+pub mod sessionize_json;
 
 use pretalx::Pretalx;
 use sessionize::Sessionize;
-// use sessionize_json::SessionizeJson;
+use sessionize_json::SessionizeJson;
 
 use crate::event::Event;
 
@@ -25,6 +25,7 @@ impl<'a> AsRef<dyn EventParser + 'a> for &'a dyn EventParser  {
 pub const DEFAULT_PARSERS: &[&dyn EventParser] = &[
     &Pretalx,
     &Sessionize,
+    &SessionizeJson,
 ];
 
 impl Event {

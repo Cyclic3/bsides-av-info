@@ -1,58 +1,68 @@
-use chrono::{DateTime, NaiveTime, Utc};
-use color_eyre::{Result, eyre::OptionExt};
-use indexmap::IndexMap;
+use std::{collections::BTreeMap, fmt::Display};
+
+use chrono::{DateTime, Utc};
+use color_eyre::{Result, eyre::{OptionExt, eyre}};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-impl TryFrom<SessionizeJson> for crate::Event {
-    type Error = color_eyre::Report;
-    fn try_from(this: SessionizeJson) -> Result<Self> {
-        let mut tracks = IndexMap::<_, crate::show_file::ShowFile>::new();
+use crate::{event::{EventBuilder, TrackInfo}, inputs::EventParser, tz::TzOrOffset};
 
-        let rooms = this
-            .rooms
-            .into_iter()
-            .map(|room| (room.id, room.name))
-            .collect::<IndexMap<_, _>>();
-
-        let speakers = this
-            .speakers
-            .into_iter()
-            .map(|speaker| (speaker.id, speaker.full_name))
-            .collect::<IndexMap<_, _>>();
-
-        for session in this.sessions {
-            let session_room =
-                rooms.get(&session.room_id).ok_or_eyre("Missing room")?;
-            let session_speakers = session
-                .speakers
-                .iter()
-                .map(|speaker| {
-                    speakers.get(speaker).ok_or_eyre("Missing speaker").cloned()
-                })
-                .collect::<Result<Vec<_>>>()?;
-            let entry = tracks.entry(session_room.clone()).or_default();
-            entry.sessions.push(crate::show_file::Session {
-                title: session.title,
-                description: session.description.unwrap_or_default(),
-                speakers: session_speakers,
-                is_break: session.is_service_session,
-                start: get_time(session.starts_at),
-                end: get_time(session.ends_at),
-            });
-        }
-
-        Ok(Self { tracks })
+pub struct SessionizeJson;
+impl Display for SessionizeJson {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Sessionize JSON object")
     }
 }
 
-fn get_time(dt: DateTime<Utc>) -> NaiveTime {
-    use chrono_tz::Europe::London;
-    dt.with_timezone(&London).time()
+impl EventParser for SessionizeJson {
+    fn parse_from_str(&self, data: &str) -> Result<crate::event::Event> {
+        let obj = serde_json::from_str::<SessionizeJsonObject>(data)?;
+
+        let mut event = EventBuilder::new();
+
+        let mut track_lookup = BTreeMap::new();
+
+        for room in obj.rooms {
+            track_lookup.insert(room.id, event.create_track(TrackInfo{name: room.name}));
+        }
+        let mut speaker_lookup = BTreeMap::new();
+        for speaker in obj.speakers {
+            speaker_lookup.insert(speaker.id, speaker.full_name);
+        }
+
+        for session in obj.sessions {
+            let track =
+                // Opening remarks and such like
+                if session.is_service_session {
+                    event.get_or_create_track("Service Session", |_| TrackInfo { name: "Service Session".into() })
+                }
+                else if let Some(track) = track_lookup.get(&session.room_id).copied() {
+                    track
+                }
+                else {
+                    return Err(eyre!("Invalid room id"));
+                };
+
+            event.add_session(crate::event::Session {
+                title: session.title,
+                description: session.description.unwrap_or_default(),
+                speakers: session.speakers.iter().map(|id| speaker_lookup.get(id).cloned().ok_or_eyre("Invalid speaker id")).try_collect()?,
+                start_utc: session.starts_at,
+                end_utc: session.ends_at,
+                tracks: std::iter::once(track).collect(),
+                room: None,
+            });
+        }
+
+        println!("WARNING: Sessionize JSON doesn't indicate timezone, assuming everywhere is London. Please use a different format if this isn't close enough!");
+
+        Ok(event.finish(TzOrOffset::TimeZone(chrono_tz::Europe::London)))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SessionizeJson {
+pub struct SessionizeJsonObject {
     sessions: Vec<Session>,
     speakers: Vec<Speaker>,
     categories: Vec<Category>,
@@ -61,6 +71,7 @@ pub struct SessionizeJson {
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(clippy::pedantic)]
 pub struct Session {
     id: String,
     title: String,
@@ -80,6 +91,7 @@ pub struct Session {
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(clippy::pedantic)]
 pub struct Speaker {
     id: String,
     first_name: String,
@@ -121,13 +133,13 @@ pub struct Room {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::io::Cursor;
 
-    const BELFAST_JSON: &str = include_str!("../../test-data/belfast.json");
+    const BELFAST_JSON: &str = include_str!("../../test-data/sessionize/belfast.json");
 
     #[test]
     fn test_parse() {
-        let _ = serde_json::from_str::<SessionizeJson>(BELFAST_JSON).unwrap();
+        let event = SessionizeJson.parse_from_str(BELFAST_JSON).unwrap();
+        insta::assert_yaml_snapshot!(event);
     }
 
     #[test]
@@ -222,63 +234,5 @@ mod test {
 "#;
         let parsed = serde_json::from_str::<Room>(JSON).unwrap();
         insta::assert_yaml_snapshot!(parsed);
-    }
-
-    #[test]
-    fn test_show_file() {
-        let sessions =
-            serde_json::from_str::<SessionizeJson>(BELFAST_JSON).unwrap();
-        let event = crate::Event::try_from(sessions).unwrap();
-        insta::assert_yaml_snapshot!(event);
-
-        let mut file = Vec::<u8>::new();
-        let mut cur = Cursor::new(&mut file);
-
-        dbg!(&event);
-
-        let t1 = event.tracks.get("Track 1 - Exhibition Centre").unwrap();
-        t1.make_track(&mut cur).unwrap();
-
-        let out = String::from_utf8(file).unwrap();
-        assert_eq!(
-            out,
-            "\
-09:45-10:25\tMorning Keynote
-
-10:25-11:10\tWhat the Real AI Attacks of the Last
-10:25-11:10\tTwo Years Actually Taught Us
-10:25-11:10\t - Liana Anca Tomescu
-
-11:30-12:15\t45,724 Networks, One Flipper Zero:
-11:30-12:15\tMapping the Wireless Threat Landscape
-11:30-12:15\tof Northern Ireland
-11:30-12:15\t - M0r3al
-
-12:15-13:00\tHacking Browsers: The Easy Way
-12:15-13:00\t - Robbe Van Roey / PinkDraconian
-
-13:45-14:30\tReverse Engineering an OAuth Supply
-13:45-14:30\tChain Attack
-13:45-14:30\t - art
-
-14:30-15:15\tNo CVV, No 3DS, No Problem: Chaining
-14:30-15:15\tTrust Failures Across a Live Aviation
-14:30-15:15\tPayment Stack
-14:30-15:15\t - Esat Berk Kandemir
-
-15:40-16:25\tChaining the Unchainable: Finding and
-15:40-16:25\tExploiting Logic Flaws in Modern Web
-15:40-16:25\tArchitectures
-15:40-16:25\t - Raj Dhruv
-
-16:25-17:10\tLeaks on the Livewire: How a Few Blocked
-16:25-17:10\tRequests Led to a Shocking Discovery
-16:25-17:10\t - Daniel Johnston
-
-17:10-17:50\tEvening Keynote
-17:10-17:50\t - Aleksandra Aytova
-
-"
-        );
     }
 }

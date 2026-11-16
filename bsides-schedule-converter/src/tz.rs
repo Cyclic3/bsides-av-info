@@ -5,7 +5,7 @@ use std::{borrow::Borrow, fmt::Display, str::FromStr};
 use chrono::{DateTime, FixedOffset, NaiveDateTime, Offset, TimeZone};
 use chrono_tz::{Tz, TzOffset};
 
-use color_eyre::{Result, eyre::{self, eyre}};
+use color_eyre::{Result, eyre::{self, OptionExt, eyre}};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_with::{DeserializeAs, DeserializeFromStr, SerializeAs, SerializeDisplay};
@@ -32,7 +32,7 @@ pub fn fixed_offset_fromstr(s: &str) -> Result<FixedOffset> {
     // If they specified a 2 billion second offset, then who cares if this goes wonky
     chrono::FixedOffset::east_opt(time.cast_signed() * sign)
     // .map(Self::FixedOffset)
-    .ok_or_else(|| eyre!("Value was neither a valid time zone nor a valid UTC offset"))
+    .ok_or_eyre("Value was neither a valid time zone nor a valid UTC offset")
 }
 
 const NO_OFFSET: FixedOffset = FixedOffset::east_opt(0).unwrap();
@@ -161,7 +161,7 @@ impl FromStr for Rfc9557DateTime {
 
     fn from_str(s: &str) -> Result<Self> {
         // Find the timezone splitter
-        let delim = s.rfind(['+', '-']).ok_or_else(|| eyre!("Missing time zone offset"))?;
+        let delim = s.rfind(['+', '-']).ok_or_eyre("Missing time zone offset")?;
         // Parse the date
         let date = NaiveDateTime::from_str(&s[..delim])?;
         let s = &s[delim..];

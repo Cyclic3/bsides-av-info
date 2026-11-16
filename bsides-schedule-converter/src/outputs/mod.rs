@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt::Debug, fs::File, path::PathBuf};
+use std::{collections::BTreeMap, fmt::Debug, fs::File, io::{BufWriter, Write}, path::PathBuf};
 
 use color_eyre::Result;
 
@@ -15,7 +15,7 @@ pub mod wordlist;
 /// (for protection against path traversal)
 pub struct FileTracker {
     output_dir: PathBuf,
-    file_cache: BTreeMap<String, File>
+    file_cache: BTreeMap<String, BufWriter<File>>
 }
 impl FileTracker {
     pub fn new(output_dir: PathBuf) -> Self {
@@ -24,14 +24,14 @@ impl FileTracker {
             file_cache: BTreeMap::default()
         }
     }
-    pub fn open(&mut self, name: impl AsRef<str> + Into<String>) -> Result<&mut File> {
+    pub fn open(&mut self, name: impl AsRef<str> + Into<String>) -> Result<&mut impl Write> {
         assert!(!name.as_ref().contains('/'), "File traversal attack detected in generated file name {:?}", name.as_ref());
         // TODO: optimise this forced allocation away if needed
         match self.file_cache.entry(name.into()) {
             std::collections::btree_map::Entry::Occupied(occupied_entry) => Ok(occupied_entry.into_mut()),
             std::collections::btree_map::Entry::Vacant(vacant_entry) => {
                 let file = std::fs::File::create(self.output_dir.join(vacant_entry.key()))?;
-                Ok(vacant_entry.insert(file))
+                Ok(vacant_entry.insert(BufWriter::new(file)))
             },
         }
     }
@@ -45,7 +45,7 @@ pub fn default_formatters() -> Vec<Box<dyn EventFormatter>> {
     vec![
         Box::new(show_file::ShowFile),
         Box::new(wordlist::WordList::with_system_dicts()),
-        // Box::new(ontime::Ontime)
+        // Box::new(ontime::Ontime),
     ]
 }
 

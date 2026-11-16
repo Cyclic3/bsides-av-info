@@ -217,6 +217,16 @@ impl EventBuilder {
     pub fn get_track_by_name(&self, name: &str) -> Option<TrackId> {
         self.tracks.get_index_of(name).map(TrackId)
     }
+    pub fn create_room(&mut self, room_info: RoomInfo) -> RoomId {
+        let ret = RoomId(self.rooms.len());
+        assert!(self.rooms.insert(room_info.name.clone(), room_info).is_none(), "Provided room name collided with created room name");
+        ret
+    }
+    pub fn create_track(&mut self, track_info: TrackInfo) -> TrackId {
+        let ret = TrackId(self.tracks.len());
+        assert!(self.tracks.insert(track_info.name.clone(), track_info).is_none(), "Provided track name collided with created track name");
+        ret
+    }
     pub fn get_or_create_room<Name: AsRef<str>>(&mut self, name: Name, create: impl FnOnce(Name) -> RoomInfo) -> RoomId {
         self.get_room_by_name(name.as_ref()).unwrap_or_else(|| {
             let ret = RoomId(self.rooms.len());
@@ -656,7 +666,7 @@ impl<'a> Filtered<'a, &'a [SessionId]> {
 pub mod test {
     use itertools::Itertools;
 
-use crate::inputs::{EventParser, pretalx::Pretalx};
+use crate::inputs::{EventParser, pretalx::Pretalx, sessionize_json::SessionizeJson};
     use super::*;
     // This is the test case that we're going to run non-parsers against. We should probably add more later...
     //
@@ -666,6 +676,11 @@ use crate::inputs::{EventParser, pretalx::Pretalx};
     pub fn load_bristol() -> Event {
         Pretalx.parse_from_str(include_str!("../test-data/pretalx/bristol-2026.json"))
             .expect("THIS IS A DIFFERENT ISSUE! Sessionize parser is buggy")
+    }
+
+    pub fn load_belfast() -> Event {
+        SessionizeJson.parse_from_str(include_str!("../test-data/sessionize/belfast.json"))
+            .expect("THIS IS A DIFFERENT ISSUE! Sessionize JSON parser is buggy")
     }
 
     #[test]
